@@ -239,7 +239,6 @@ int main/*_mian*/(int argc, char *argv[])
     VkClearValue clearColor = {};
     clearColor.color = { 0.0f, 0.5f, 1.f, 1.f };
 
-    ///*绘制三角形*/
     std::vector<vertex> vertices = {
         { {  .0f, -.5f }, { 1, 0, 0, 1 } },
         { { -.5f,  .5f }, { 0, 1, 0, 1 } },
@@ -256,62 +255,6 @@ int main/*_mian*/(int argc, char *argv[])
     vertexBuffer vertexBuffer_perInstance(offsets.size() * sizeof(glm::vec2));
     vertexBuffer_perInstance.TransferData(offsets.data(),vertices.size() * sizeof(glm::vec2));
 
-    /* 绘制长方形
-    std::vector<vertex> vertices = {
-        { { -.5f, -.5f }, { 1, 1, 0, 1 } },
-        { {  .5f, -.5f }, { 1, 0, 0, 1 } },
-        { { -.5f,  .5f }, { 0, 1, 0, 1 } },
-        { {  .5f,  .5f }, { 0, 0, 1, 1 } }
-    };
-    vertexBuffer vertex_buffer(vertices.size() * sizeof(vertex));
-    vertex_buffer.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
-
-    std::vector<uint16_t> indices = {
-        0, 1, 2,
-        1, 2, 3
-    };
-    indexBuffer index_buffer(indices.size() * sizeof(uint16_t));
-    index_buffer.TransferData(indices.data(),indices.size() * sizeof(uint16_t));
-    */
-
-
-    /*绘制粉色爱心
-    std::vector<vertex> vertices;
-
-    glm::vec4 pink = {1.0f, 0.4f, 0.7f, 1.0f};
-
-    // 中心点
-    vertices.push_back({ {0.0f, 0.0f}, pink });
-
-    const int SEGMENTS = 64;
-    for (int i = 0; i <= SEGMENTS; ++i) {
-        float t = float(i) / SEGMENTS * 2.0f * 3.1415926f;
-
-        float x = 16 * powf(sinf(t), 3);
-        float y = 13 * cosf(t)
-                - 5 * cosf(2 * t)
-                - 2 * cosf(3 * t)
-                - cosf(4 * t);
-
-        // 缩放并旋转180°
-        x = -x / 18.0f;
-        y = -y / 18.0f;
-
-        vertices.push_back({ {x, y}, pink });
-    }
-    vertexBuffer vertex_buffer(vertices.size() * sizeof(vertex));
-    vertex_buffer.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
-
-    std::vector<uint16_t> indices;
-
-    for (uint16_t i = 1; i <= SEGMENTS; ++i) {
-        indices.push_back(0);     // 中心点
-        indices.push_back(i);
-        indices.push_back(i + 1);
-    }
-    indexBuffer index_buffer(indices.size() * sizeof(uint16_t));
-    index_buffer.TransferData(indices.data(),indices.size() * sizeof(uint16_t));
-    */
     while (!glfwWindowShouldClose(pWindow)) {
         //窗口最小化时停止渲染循环
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED)){
@@ -331,18 +274,6 @@ int main/*_mian*/(int argc, char *argv[])
 
         //开始渲染通道
         rpwf.renderPass.CmdBegin(commandBuffer, rpwf.framebuffers[imageIndex], { {}, windowSize }, clearColor);
-
-        //绑定顶点缓冲
-        // /VkDeviceSize offset = 0;
-        // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertex_buffer.Address(), &offset);
-
-        // //绑定索引缓冲
-        // vkCmdBindIndexBuffer(commandBuffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
-
-        // vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
-
-        // //vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-        // vkCmdDrawIndexed(commandBuffer,static_cast<uint32_t>(indices.size()),1,0,0,0);
 
         VkBuffer buffers[2] = { vertexBuffer_perVertex, vertexBuffer_perInstance };
         VkDeviceSize offsets[2] = {};

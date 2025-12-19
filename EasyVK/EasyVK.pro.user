@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.14.84, 2025-12-19T14:40:21. -->
+<!-- Written by QtCreator 4.14.84, 2025-12-19T15:46:39. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -97,8 +97,8 @@
    <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <value type="int" key="EnableQmlDebugging">0</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/Users/zengqingguo/Desktop/vulkan/Project/build-EasyVK-Replacement_for_Desktop_Qt_5_9_8_clang_64bit-Debug</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">/Users/zengqingguo/Desktop/vulkan/Project/build-EasyVK-Replacement_for_Desktop_Qt_5_9_8_clang_64bit-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/Users/zengqingguo/Desktop/gitHub/VulkanStudy/build-EasyVK-Replacement_for_Desktop_Qt_5_9_8_clang_64bit-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">/Users/zengqingguo/Desktop/gitHub/VulkanStudy/build-EasyVK-Replacement_for_Desktop_Qt_5_9_8_clang_64bit-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -289,19 +289,16 @@
     </valuelist>
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
-    <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes">
-     <value type="QString">VULKAN_SDK=/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS</value>
-     <value type="QString">VK_ICD_FILENAMES=/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/share/vulkan/icd.d/MoltenVK_icd.json</value>
-     <value type="QString">VK_ADD_LAYER_PATH=/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/share/vulkan/explicit_layer.d</value>
-    </valuelist>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/Users/zengqingguo/Desktop/vulkan/Project/EasyVK/EasyVK.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/Users/zengqingguo/Desktop/vulkan/Project/EasyVK/EasyVK.pro</value>
+    <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">EasyVK2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK/EasyVK.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK/EasyVK.pro</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory.default">/Users/zengqingguo/Desktop/vulkan/Project/build-EasyVK-Replacement_for_Desktop_Qt_5_9_8_clang_64bit-Debug</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>
