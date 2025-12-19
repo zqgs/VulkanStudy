@@ -11,8 +11,8 @@ SOURCES += \
         EasyVulkan.cpp \
         VKBase+.cpp \
         VKBase.cpp \
-        main.cpp \
-        main_loadtexture.cpp
+        VulkanSurface.mm \
+        main.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -65,5 +65,3 @@ DISTFILES += \
     shader/InstancedRendering.vert.shader \
     shader/VertexBuffer.frag.shader \
     shader/VertexBuffer.vert.shader
-
-
