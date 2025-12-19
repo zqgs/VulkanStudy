@@ -62,6 +62,5 @@ HEADERS += \
 DISTFILES += \
     shader/FirstTriangle.frag.shader \
     shader/FirstTriangle.vert.shader \
-    shader/InstancedRendering.vert.shader \
     shader/VertexBuffer.frag.shader \
     shader/VertexBuffer.vert.shader

@@ -9,3 +9,4 @@ void main() {
     gl_Position = vec4(i_Position, 0, 1);
     o_Color = i_Color; //直接输出
 }
+

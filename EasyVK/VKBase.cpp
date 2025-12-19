@@ -12,14 +12,14 @@ std::mutex graphicsBase::callback_mtx;
 
 graphicsBase::~graphicsBase()
 {
-    //????????
+    //判断实例是否创建
     if(!instance){
         return;
     }
-    //??????????
+    //判断逻辑设备是否创建
     if(device){
-        WaitIdle(); //?????? --- ??????,?????????????????????
-        //?????????
+        WaitIdle(); //等待队列空闲 --- 不判断返回值,程序即将销毁，即使出问题也需要执行销毁流程
+        //判断交换链是否创建
         if(swapchain){
             ExecuteCallbacks(callbacks_destroySwapchain);
             for (auto& i : swapchainImageViews){
@@ -32,18 +32,18 @@ graphicsBase::~graphicsBase()
         ExecuteCallbacks(callbacks_destroyDevice);
         vkDestroyDevice(device, nullptr);
     }
-    //??surface????
+    //判断surface是否创建
     if(surface){
         vkDestroySurfaceKHR(instance, surface, nullptr);
     }
-    //???????debugMessager
+    //判断是否开启了debugMessager
     if(debugMessenger){
         auto vkDestroyDebugUtilsMessenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
         if (vkDestroyDebugUtilsMessenger){
             vkDestroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
         }
     }
-    //????
+    //销毁实例
     vkDestroyInstance(instance, nullptr);
 }
 
@@ -87,7 +87,7 @@ result_t graphicsBase::CreateInstance(VkInstanceCreateFlags flag)
         }
     }
 
-    //???????DEBUG???instanceLayers?instanceExtensions??????????
+    //仅在编译选项为DEBUG时，在instanceLayers和instanceExtensions尾部加上所需的名称。
     if (ENABLE_DEBUG_MESSENGER){
         if(foundValidation){
             this->AddInstanceLayers("VK_LAYER_KHRONOS_validation");
@@ -116,13 +116,13 @@ result_t graphicsBase::CreateInstance(VkInstanceCreateFlags flag)
         //LOG(fmt::format("[ graphicsBase ] ERROR\nFailed to create a vulkan instance!\nError code: {}\n", int32_t(result)));
         return result;
     }
-    //???????Vulkan??
+    //创建实例后输出Vulkan版本
     printf("Vulkan API Version: %d.%d.%d\n",
         VK_VERSION_MAJOR(apiVersion),
         VK_VERSION_MINOR(apiVersion),
         VK_VERSION_PATCH(apiVersion));
 
-    //???Vulkan????????debug messenger
+    //创建完Vulkan实例后紧接着创建debug messenger
     if (ENABLE_DEBUG_MESSENGER){
         CreateDebugMessenger();
     }
@@ -159,7 +159,7 @@ VkResult graphicsBase::CheckInstanceLayers(std::vector<const char *> &layersToCh
             i = nullptr;
         }
     }
-    //???????VK_SUCCESS
+    //一切顺利则返回VK_SUCCESS
     return VK_SUCCESS;
 }
 
@@ -210,7 +210,7 @@ void graphicsBase::InstanceExtensions(const std::vector<const char *> &extension
 
 VkResult graphicsBase::CreateDebugMessenger()
 {
-    /*?Ch1-3??*/
+    /*待Ch1-3填充*/
     static PFN_vkDebugUtilsMessengerCallbackEXT DebugUtilsMessengerCallback = [](
         VkDebugUtilsMessageSeverityFlagBitsEXT /*messageSeverity*/,
         VkDebugUtilsMessageTypeFlagsEXT /*messageTypes*/,
@@ -231,7 +231,7 @@ VkResult graphicsBase::CreateDebugMessenger()
     debugUtilsMessengerCreateInfo.pfnUserCallback = DebugUtilsMessengerCallback;
 
 
-    //Vulkan?????????????????????vkGetInstanceProcAddr(...)???,??debug messenger????
+    //Vulkan中，扩展相关的函数，若非设备特定，大都通过vkGetInstanceProcAddr(...)来获取,创建debug messenger也不例外
     PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessenger =
             reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
     if(vkCreateDebugUtilsMessenger){
@@ -271,35 +271,35 @@ VkResult graphicsBase::GetQueueFamilyIndices(VkPhysicalDevice physicalDevice, bo
     auto& ip = queueFamilyIndices[1];
     auto& ic = queueFamilyIndices[2];
     ig = ip = ic = VK_QUEUE_FAMILY_IGNORED;
-    //??????????
+    //遍历所有队列族的索引
     for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        //??enableGraphicsQueue?true????????????????
+        //只在enableGraphicsQueue为true时获取支持图形操作的队列族的索引
         VkBool32 supportGraphics = enableGraphicsQueue && queueFamilyPropertieses[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
-        ////??enableComputeQueue?true??????????????
+        ////只在enableComputeQueue为true时获取支持计算的队列族的索引
         VkBool32 supportCompute  = enableComputeQueue && queueFamilyPropertieses[i].queueFlags & VK_QUEUE_COMPUTE_BIT;
-        //?????window surface??????????????
+        //只在创建了window surface时获取支持呈现的队列族的索引
         VkBool32 supportPresentation  = false;
         if(surface){
             if (VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supportPresentation)) {
                 //std::cout << fmt::format("[ graphicsBase ] ERROR\nFailed to determine if the queue family supports presentation!\nError code: {}\n", int32_t(result));
                 return result;
             }
-            //????????????????
+            //若某队列族同时支持图形操作和计算
             if (supportGraphics && supportCompute) {
-                //????????????????????
+                //若需要呈现，最好是三个队列族索引全部相同
                 if (supportPresentation) {
                     ig = ip = ic = i;
                     break;
                 }
-                //??ig?ic??????????????????i?????????????
+                //除非ig和ic都已取得且相同，否则将它们的值覆写为i，以确保两个队列族索引相同
                 if (ig != ic || ig == VK_QUEUE_FAMILY_IGNORED){
                     ig = ic = i;
                 }
-                //??????????????break?
+                //如果不需要呈现，那么已经可以break了
                 if (!surface)
                     break;
             }
-            //????????????????????????????i
+            //若任何一个队列族索引可以被取得但尚未被取得，将其值覆写为i
             if (supportGraphics && ig == VK_QUEUE_FAMILY_IGNORED){
                 ig = i;
             }
@@ -312,13 +312,13 @@ VkResult graphicsBase::GetQueueFamilyIndices(VkPhysicalDevice physicalDevice, bo
         }
 
     }
-    //???????????????????????????
+    //若任何需要被取得的队列族索引尚未被取得，则函数执行失败
     if (((ig == VK_QUEUE_FAMILY_IGNORED) && enableGraphicsQueue) ||
         ((ip == VK_QUEUE_FAMILY_IGNORED) && surface) ||
         ((ic == VK_QUEUE_FAMILY_IGNORED) && enableComputeQueue)){
         return VK_RESULT_MAX_ENUM;
     }
-    //?????????????????????????
+    //函数执行成功时，将所取得的队列族索引写入到成员变量
     queueFamilyIndex_graphics = ig;
     queueFamilyIndex_presentation = ip;
     queueFamilyIndex_compute = ic;
@@ -398,7 +398,7 @@ void graphicsBase::AddDeviceExtension(const char *extensionName)
 
 VkResult graphicsBase::GetPhysicalDevices()
 {
-    /*?Ch1-3??*/
+    /*待Ch1-3填充*/
     uint32_t deviceCount;
      if (VkResult result = vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr)) {
          qDebug("[ graphicsBase ] ERROR\nFailed to get the count of physical devices!\nError code: %d\n", int32_t(result));
@@ -418,9 +418,9 @@ VkResult graphicsBase::GetPhysicalDevices()
 
 VkResult graphicsBase::DeterminePhysicalDevice(uint32_t deviceIndex, bool enableGraphicsQueue, bool enableComputeQueue)
 {
-    //??????????????????????????
+    //定义一个特殊值用于标记一个队列族索引已被找过但未找到
     static uint32_t notFound = INT32_MAX;
-    //?????????????
+    //定义队列族索引组合的结构体
     struct queueFamilyIndexCombination {
         uint32_t graphics;
         uint32_t presentation;
@@ -432,27 +432,27 @@ VkResult graphicsBase::DeterminePhysicalDevice(uint32_t deviceIndex, bool enable
         VK_QUEUE_FAMILY_IGNORED
     };
 
-    //queueFamilyIndexCombinations????????????????????
+    //queueFamilyIndexCombinations用于为各个物理设备保存一份队列族索引组合
     static std::vector<queueFamilyIndexCombination> queueFamilyIndexCombinations(this->availablePhysicalDevices.size(),defaultCombination);
     auto& ig =  queueFamilyIndexCombinations[deviceIndex].graphics;
     auto& ip =  queueFamilyIndexCombinations[deviceIndex].presentation;
     auto& ic =  queueFamilyIndexCombinations[deviceIndex].compute;
 
-    //?????????????????????VK_RESULT_MAX_ENUM
+    //如果有任何队列族索引已被找过但未找到，返回VK_RESULT_MAX_ENUM
     if (((ig == notFound) && enableGraphicsQueue) ||
         ((ip == notFound) && this->surface) ||
         ((ic == notFound) && enableComputeQueue)){
         return VK_RESULT_MAX_ENUM;
     }
-    //????????????????????
+    //如果有任何队列族索引应被获取但还未被找过
     if ((ig == VK_QUEUE_FAMILY_IGNORED && enableGraphicsQueue) ||
         (ip == VK_QUEUE_FAMILY_IGNORED && this->surface) ||
         (ic == VK_QUEUE_FAMILY_IGNORED && enableComputeQueue)) {
         uint32_t indices[3];
         VkResult result = this->GetQueueFamilyIndices(this->availablePhysicalDevices[deviceIndex], enableGraphicsQueue, enableComputeQueue, indices);
-        //?GetQueueFamilyIndices(...)??VK_SUCCESS?VK_RESULT_MAX_ENUM?vkGetPhysicalDeviceSurfaceSupportKHR(...)???????????????
-        //????????????????????queueFamilyIndexCombinations[deviceIndex]?????
-        //??????????VK_QUEUE_FAMILY_IGNORED????????????VK_QUEUE_FAMILY_IGNORED?~0u??INT32_MAX??????????notFound
+        //若GetQueueFamilyIndices(...)返回VK_SUCCESS或VK_RESULT_MAX_ENUM（vkGetPhysicalDeviceSurfaceSupportKHR(...)执行成功但没找齐所需队列族），
+        //说明对所需队列族索引已有结论，保存结果到queueFamilyIndexCombinations[deviceIndex]中相应变量
+        //应被获取的索引若仍为VK_QUEUE_FAMILY_IGNORED，说明未找到相应队列族，VK_QUEUE_FAMILY_IGNORED（~0u）与INT32_MAX做位与得到的数值等于notFound
         if (result == VK_SUCCESS ||
             result == VK_RESULT_MAX_ENUM) {
             if (enableGraphicsQueue){
@@ -465,11 +465,11 @@ VkResult graphicsBase::DeterminePhysicalDevice(uint32_t deviceIndex, bool enable
                 ic = indices[2] & INT32_MAX;
             }
         }
-        //??GetQueueFamilyIndices(...)?????return
+        //如果GetQueueFamilyIndices(...)执行失败，return
         if (result)
             return result;
     }
-    //?????if?????????????????????????queueFamilyIndexCombinations[deviceIndex]?????
+    //若以上两个if分支皆不执行，则说明所需的队列族索引皆已被获取，从queueFamilyIndexCombinations[deviceIndex]中取得索引
     else {
         this->queueFamilyIndex_graphics = enableGraphicsQueue ? ig : VK_QUEUE_FAMILY_IGNORED;
         this->queueFamilyIndex_presentation = this->surface ? ip : VK_QUEUE_FAMILY_IGNORED;
@@ -511,12 +511,12 @@ VkResult graphicsBase::CreateDevice(VkDeviceCreateFlags flags)
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
     deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
 
-    //????????????
+    //使用物理设备创建逻辑设备
     if (VkResult result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) {
         //std::cout << fmt::format("[ graphicsBase ] ERROR\nFailed to create a vulkan logical device!\nError code: {}\n", int32_t(result));
         return result;
     }
-    //??????????
+    //从逻辑设备中取得队列
     if(queueFamilyIndex_graphics != VK_QUEUE_FAMILY_IGNORED){
         vkGetDeviceQueue(device,queueFamilyIndex_graphics,0,&queue_graphics);
     }
@@ -526,14 +526,14 @@ VkResult graphicsBase::CreateDevice(VkDeviceCreateFlags flags)
     if(queueFamilyIndex_compute != VK_QUEUE_FAMILY_IGNORED){
         vkGetDeviceQueue(device,queueFamilyIndex_presentation,0,&queue_compute);
     }
-    //??????????????????????????????
+    //逻辑设备成功创建后，物理设备不会再变更。获取以下物理设备属性
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &physicalDeviceMemoryProperties);
 
-    //???????????
+    //输出所用的物理设备名称
     qDebug("Renderer: %s\n", physicalDeviceProperties.deviceName);
 
-    //??????????
+    //执行创建设备回调函数
     ExecuteCallbacks(callbacks_createDevice);
     return VK_SUCCESS;
 }
@@ -554,7 +554,7 @@ VkResult graphicsBase::CreateSwapchain_Internal()
         qDebug("[ graphicsBase ] ERROR\nFailed to create a swapchain!\nError code: %d\n", int32_t(result));
         return result;
     }
-    //???????
+    //获取交换链图像
     uint32_t swapchainImageCount;
     if (VkResult result = vkGetSwapchainImagesKHR(device, swapchain, &swapchainImageCount, nullptr)) {
         qDebug("[ graphicsBase ] ERROR\nFailed to get the count of swapchain images!\nError code: %d\n", int32_t(result));
@@ -565,7 +565,7 @@ VkResult graphicsBase::CreateSwapchain_Internal()
         qDebug("[ graphicsBase ] ERROR\nFailed to get swapchain images!\nError code: %d\n", int32_t(result));
         return result;
     }
-    //????????Image View
+    //为交换链图像创建Image View
     swapchainImageViews.resize(swapchainImageCount);
     VkImageViewCreateInfo imageViewCreateInfo = {};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -581,9 +581,9 @@ VkResult graphicsBase::CreateSwapchain_Internal()
         }
     }
     /*Swapchain
-     ??? Image[0] ??> ImageView[0] ??> Framebuffer[0]
-     ??? Image[1] ??> ImageView[1] ??> Framebuffer[1]
-     ??? Image[2] ??> ImageView[2] ??> Framebuffer[2]
+     ├── Image[0] ──> ImageView[0] ──> Framebuffer[0]
+     ├── Image[1] ──> ImageView[1] ──> Framebuffer[1]
+     └── Image[2] ──> ImageView[2] ──> Framebuffer[2]
      */
     return VK_SUCCESS;
 }
@@ -653,7 +653,7 @@ VkResult graphicsBase::SetSurfaceFormat(VkSurfaceFormatKHR surfaceFormat)
 {
     bool formatIsAvailable = false;
 
-    //format???,?????????????????
+    //format未指定,则匹配色彩空间，匹配成功则直接使用
     if(!surfaceFormat.format){
         for(auto& i : availableSurfaceFormats){
             if(i.colorSpace == surfaceFormat.colorSpace){
@@ -664,7 +664,7 @@ VkResult graphicsBase::SetSurfaceFormat(VkSurfaceFormatKHR surfaceFormat)
             }
         }
     }
-    //format????,?????format?????
+    //format已经指定,则需要匹配format和色彩空间
     else{
         for(auto& i : availableSurfaceFormats){
             if(i.format == surfaceFormat.format &&
@@ -676,11 +676,11 @@ VkResult graphicsBase::SetSurfaceFormat(VkSurfaceFormatKHR surfaceFormat)
             }
         }
     }
-    //???????????????????????
+    //如果没有符合的格式，恰好有个语义相符的错误代码
     if (!formatIsAvailable){
         return VK_ERROR_FORMAT_NOT_SUPPORTED;
     }
-    //???????????RecreateSwapchain()?????
+    //如果交换链已存在，调用RecreateSwapchain()重建交换链
     if (swapchain){
         return RecreateSwapchain();
     }
@@ -689,34 +689,34 @@ VkResult graphicsBase::SetSurfaceFormat(VkSurfaceFormatKHR surfaceFormat)
 
 VkResult graphicsBase::CreateSwapchain(bool limitFrameRate, VkSwapchainCreateFlagsKHR flags)
 {
-    //????surface??????????
+    //获取一下surface的支持能力与限制条件
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     if (VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) {
         qDebug("[ graphicsBase ] ERROR\nFailed to get physical device surface capabilities!\nError code: %d\n", int32_t(result));
         return result;
     }
-    //??????
+    //交换图像数量
     swapchainCreateInfo.minImageCount = surfaceCapabilities.minImageCount + (surfaceCapabilities.maxImageCount > surfaceCapabilities.minImageCount);
 
-    //?????????????????
+    //判断下交换链支持能力中是否已经确定
     VkExtent2D extent = {};
-    if(surfaceCapabilities.currentExtent.width == -1){ //???,????extent
+    if(surfaceCapabilities.currentExtent.width == -1){ //未确定,启用默认extent
         extent.width = glm::clamp(defaultWindowSize.width,surfaceCapabilities.minImageExtent.width,surfaceCapabilities.maxImageExtent.width);
         extent.height = glm::clamp(defaultWindowSize.height,surfaceCapabilities.minImageExtent.height,surfaceCapabilities.maxImageExtent.height);
     }
-    else{ //???,?????????????
+    else{ //已确定,启用交换链支持能力中的范围
         extent.width = surfaceCapabilities.currentExtent.width;
         extent.height = surfaceCapabilities.currentExtent.height;
     }
-    //???????
+    //交换链图像尺寸
     swapchainCreateInfo.imageExtent = extent;
 
-    //????1??????????
+    //视点数为1，变换使用当前变换：
     swapchainCreateInfo.imageArrayLayers = 1;
-    //???5?: ?????????90�??????180�??????????. (??????????)
+    //一般有5种: 不变换、顺时针旋转90°、顺时针旋转180°、水平镜像、垂直镜像. (当前变换一般是不变换)
     swapchainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
 
-    //??????????--????????????????????
+    //透明度通道不着重处理--因为我们的目标是计算着色器，显示只是附加
     if(surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR){
         swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
     }
@@ -728,34 +728,34 @@ VkResult graphicsBase::CreateSwapchain(bool limitFrameRate, VkSwapchainCreateFla
             }
         }
     }
-    //????? -- ???????:????(MacOS)???????????????????????????????????
-    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; //?????????
+    //图像的用途 -- 非常重要。注意:有些设备(MacOS)不支持计算着色器直接写交换链，最佳做法先写入中间缓存，最后再写入交换链
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; //图形管线输出到屏幕
     if (surfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //?????????
+        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //传输拷贝交换链图像
     if (surfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; //?????????
+        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; //传输拷贝交换链图像
     else
         qDebug("[ graphicsBase ] WARNING\nVK_IMAGE_USAGE_TRANSFER_DST_BIT isn't supported!\n");
 
 
-    //??surface??,?????????????
+    //获取surface格式,如果没有可用格式则获取一下
     if(availableSurfaceFormats.empty()){
         if(VkResult result = GetSurfaceFormats()){
             return result;
         }
     }
-    //??????????(????VK_FORMAT_R8G8B8A8_UNORM?????????surface???format????)
+    //设置交换链的图像格式(默认使用VK_FORMAT_R8G8B8A8_UNORM，如果找不到则使用surface中可用format的第一个)
     if (!swapchainCreateInfo.imageFormat){
         if (SetSurfaceFormat({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }) &&
             SetSurfaceFormat({ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })) {
-            //????????????????????????????????availableSurfaceFormats?????
+            //如果找不到上述图像格式和色彩空间的组合，那只能有什么用什么，采用availableSurfaceFormats中的第一组
             swapchainCreateInfo.imageFormat = availableSurfaceFormats[0].format;
             swapchainCreateInfo.imageColorSpace = availableSurfaceFormats[0].colorSpace;
             qDebug("[ graphicsBase ] WARNING\nFailed to select a four-component UNORM surface format!\n");
         }
     }
 
-    //????surface????????
+    //获取一下surface中支持的呈现模式
     uint32_t surfacePresentModeCount = 0;
     if(VkResult result = vkGetPhysicalDeviceSurfacePresentModesKHR(this->physicalDevice,this->surface,&surfacePresentModeCount,nullptr)){
         qDebug("[ graphicsBase ] ERROR\nFailed to get the count of surface present modes!\nError code: %d\n", int32_t(result));
@@ -771,10 +771,10 @@ VkResult graphicsBase::CreateSwapchain(bool limitFrameRate, VkSwapchainCreateFla
         return result;
     }
 
-    /*????
-     * ??:VK_PRESENT_MODE_IMMEDIATE_KHR?VK_PRESENT_MODE_FIFO_RELAXED_KHR????????
-     * 1.????????????VK_PRESENT_MODE_MAILBOX_KHR
-     * 2.??????????????????????VK_PRESENT_MODE_FIFO_KHR
+    /*呈现模式
+     * 注意:VK_PRESENT_MODE_IMMEDIATE_KHR和VK_PRESENT_MODE_FIFO_RELAXED_KHR可能导致画面撕裂
+     * 1.不需要限制帧率时应当选择VK_PRESENT_MODE_MAILBOX_KHR
+     * 2.需要限制帧率使其最大不超过屏幕刷新率时应选择VK_PRESENT_MODE_FIFO_KHR
      */
     swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     if(!limitFrameRate){
@@ -794,14 +794,14 @@ VkResult graphicsBase::CreateSwapchain(bool limitFrameRate, VkSwapchainCreateFla
     if (VkResult result = CreateSwapchain_Internal())
         return result;
 
-    //???????????
+    //执行创建交换链回调函数
     ExecuteCallbacks(callbacks_createSwapchain);
     return VK_SUCCESS;
 }
 
 VkResult graphicsBase::RecreateSwapchain()
 {
-    //????surface??????????
+    //获取一下surface的支持能力与限制条件
     VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
     if (VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) {
         qDebug("[ graphicsBase ] ERROR\nFailed to get physical device surface capabilities!\nError code: %d\n", int32_t(result));
@@ -815,8 +815,8 @@ VkResult graphicsBase::RecreateSwapchain()
     swapchainCreateInfo.oldSwapchain = swapchain;
 
 
-    //????????????????????????????????????????
-    VkResult result = vkQueueWaitIdle(queue_graphics); //??????????????????????????????
+    //重建交换链最好等待图形和呈现队列空闲（交换链图像被图形队列写入，被呈现队列读取）
+    VkResult result = vkQueueWaitIdle(queue_graphics); //仅在等待图形队列成功，且图形与呈现所用队列不同时等待呈现队列
     if (!result &&queue_graphics != queue_presentation){
         result = vkQueueWaitIdle(queue_presentation);
     }
@@ -824,7 +824,7 @@ VkResult graphicsBase::RecreateSwapchain()
         qDebug("[ graphicsBase ] ERROR\nFailed to wait for the queue to be idle!\nError code: %d\n", int32_t(result));
         return result;
     }
-    //?????image view(??????????????,????????????????????)
+    //销毁旧有的image view(为什么不在此处销毁交换链图像,因为销毁旧的交换链时会一并销毁交换链图像)
     for (auto& i : swapchainImageViews){
         if (i){
             vkDestroyImageView(device, i, nullptr);
@@ -832,11 +832,11 @@ VkResult graphicsBase::RecreateSwapchain()
     }
     swapchainImageViews.resize(0);
 
-    //???????
+    //创建新的交换链
     if (result = CreateSwapchain_Internal()){
         return result;
     }
-    //???????ExecuteCallbacks(...)???
+    //执行回调函数，ExecuteCallbacks(...)见后文
     ExecuteCallbacks(callbacks_createSwapchain);
     return VK_SUCCESS;
 }
@@ -848,7 +848,7 @@ uint32_t graphicsBase::ApiVersion() const
 
 VkResult graphicsBase::UseLatestApiVersion()
 {
-    /*?Ch1-3??*/
+    /*待Ch1-3填充*/
     if(vkGetInstanceProcAddr(this->instance,"vkEnumerateInstanceVersion")){
         return vkEnumerateInstanceVersion(&apiVersion);
     }
@@ -893,28 +893,28 @@ VkResult graphicsBase::WaitIdle() const
 
 VkResult graphicsBase::RecreateDevice(VkDeviceCreateFlags flags)
 {
-    //?????????
+    //销毁原有的逻辑设备
     if (device) {
         VkResult result = WaitIdle();
         if (result != VK_SUCCESS &&
             result != VK_ERROR_DEVICE_LOST){
 
             if (swapchain) {
-                //?????????????
+                //调用销毁交换链时的回调函数
                 ExecuteCallbacks(callbacks_destroySwapchain);
                 qDebug()<<"ExecuteCallbacks 2 callbacks_destroySwapchain: "<<callbacks_destroySwapchain.size();
-                //????????image view
+                //销毁交换链图像的image view
                 for (auto& i : swapchainImageViews){
                     if (i){
                         vkDestroyImageView(device, i, nullptr);
                     }
                 }
                 swapchainImageViews.resize(0);
-                //?????
+                //销毁交换链
                 vkDestroySwapchainKHR(device, swapchain, nullptr);
-                //?????handle
+                //重置交换链handle
                 swapchain = (VkSwapchainKHR)VK_NULL_HANDLE;
-                //?????????
+                //重置交换链创建信息
                 swapchainCreateInfo = {};
             }
             ExecuteCallbacks(callbacks_destroyDevice);
@@ -923,7 +923,7 @@ VkResult graphicsBase::RecreateDevice(VkDeviceCreateFlags flags)
             device = (VkDevice)VK_NULL_HANDLE;;
         }
     }
-    //????????
+    //创建新的逻辑设备
     return CreateDevice(flags);
 }
 
@@ -943,13 +943,13 @@ void graphicsBase::Terminate()
 
 result_t graphicsBase::SwapImage(VkSemaphore semaphore_imageIsAvailable)
 {
-    //??????????????????????????
+    //检查交换链是否发生了变换，如果变化了则销毁旧的交换链
     if (swapchainCreateInfo.oldSwapchain &&
         swapchainCreateInfo.oldSwapchain != swapchain) {
         vkDestroySwapchainKHR(device, swapchainCreateInfo.oldSwapchain, nullptr);
         swapchainCreateInfo.oldSwapchain = (VkSwapchainKHR)VK_NULL_HANDLE;
     }
-    //?????????
+    //获取交换链图像索引
     while (VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, semaphore_imageIsAvailable, (VkFence)VK_NULL_HANDLE, &currentImageIndex)){
         switch (result) {
         case VK_SUBOPTIMAL_KHR:

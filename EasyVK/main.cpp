@@ -1,4 +1,4 @@
-#include <QCoreApplication>
+﻿#include <QCoreApplication>
 #include "GlfwGeneral.h"
 #include "EasyVulkan.h"
 
@@ -17,7 +17,7 @@ void setupVulkanEnv() {
     setenv("VK_ADD_LAYER_PATH", (vulkanSdk + "/share/vulkan/explicit_layer.d").c_str(), 1);
 
 #elif defined(__linux__)
-    const std::string vulkanSdk = "/usr";  // ???? Vulkan SDK ??
+    const std::string vulkanSdk = "/usr";  // 或者你的 Vulkan SDK 路径
     setenv("VULKAN_SDK", vulkanSdk.c_str(), 1);
     setenv("VK_ICD_FILENAMES", (vulkanSdk + "/share/vulkan/icd.d/nvidia_icd.json").c_str(), 1);
     setenv("LD_LIBRARY_PATH", (vulkanSdk + "/lib").c_str(), 1);
@@ -26,7 +26,7 @@ void setupVulkanEnv() {
     const std::string vulkanSdk = "E:\\VulkanSDK\\1.3.290.0";
     SetEnvironmentVariableA("VULKAN_SDK", vulkanSdk.c_str());
     SetEnvironmentVariableA("VK_ICD_FILENAMES", (vulkanSdk + "\\Bin\\VkICD.json").c_str());
-    // Windows ? DLL ????? PATH ?
+    // Windows 的 DLL 通常直接在 PATH 里
     char* path = nullptr;
     size_t len;
     _dupenv_s(&path, &len, "PATH");
@@ -42,14 +42,14 @@ bool compileShader(const QString& glslcPath,
 {
     QProcess process;
 
-    // ?????glslc -o out.spv shader.glsl
+    // 构造参数：glslc -o out.spv shader.glsl
     QStringList args;
     args << "-o" << spvPath << shaderPath;
 
     process.setProgram(glslcPath);
     process.setArguments(args);
 
-    // Qt ????? PATH, working directory ?????
+    // Qt 跨平台处理 PATH, working directory 不需要设置
     process.start();
     if (!process.waitForStarted()) {
         qDebug() << "Failed to start glslc:" << process.errorString();
@@ -61,7 +61,7 @@ bool compileShader(const QString& glslcPath,
         return false;
     }
 
-    // ????? log???/???
+    // 输出编译器 log（警告/错误）
     QString stdOut = process.readAllStandardOutput();
     QString stdErr = process.readAllStandardError();
 
@@ -71,7 +71,7 @@ bool compileShader(const QString& glslcPath,
     if (!stdErr.isEmpty())
         qDebug() << "[glslc error ]:" << stdErr.trimmed();
 
-    // glslc ?? 0 ????
+    // glslc 返回 0 表示成功
     if (process.exitCode() != 0) {
         qDebug() << "Shader compilation failed. ExitCode =" << process.exitCode();
         return false;
@@ -83,8 +83,8 @@ bool compileShader(const QString& glslcPath,
 
 
 using namespace vulkan;
-pipelineLayout pipelineLayout_triangle; //????
-pipeline pipeline_triangle;             //??
+pipelineLayout pipelineLayout_triangle; //管线布局
+pipeline pipeline_triangle;             //管线
 
 struct vertex {
     glm::vec2 position;
@@ -95,20 +95,20 @@ const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() {
     static const auto& rpwf = easyVulkan::CreateRpwf_Screen();
     return rpwf;
 }
-//???????????
+//该函数用于创建管线布局
 void CreateLayout() {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
 }
-//?????????
+//该函数用于创建管线
 void CreatePipeline() {
 
     QString appPath = qApp->applicationDirPath();
 #if defined(__APPLE__)
     QString glslc = "/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/bin/glslc";
-    QString dir = "/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK";
+    QString dir = "/Users/zengqingguo/Desktop/vulkan/Project/EasyVK";
 #else
-    QString glslc = "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe";          // ??1
+    QString glslc = "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe";          // 参数1
     QString dir = "D:/Works/Plan/direct11Learn/VulkanLearn/EasyVK";
 #endif
     struct ShaderStruct
@@ -142,7 +142,7 @@ void CreatePipeline() {
     for(const ShaderStruct& item : shader_struct_list){
         compileShader(glslc, item.shader, item.output);
 
-        // ?? shader module??????? static?
+        // 创建 shader module（注意：不能是 static）
         shaderModules.emplace_back(item.output.toStdString().c_str());
 
         shaderStageCreateInfos_triangle.push_back(shaderModules.back().StageCreateInfo(item.stage));
@@ -153,40 +153,40 @@ void CreatePipeline() {
         pipelineCiPack.createInfo.layout = pipelineLayout_triangle;
         pipelineCiPack.createInfo.renderPass = RenderPassAndFramebuffers().renderPass;
 
-        //????0?????????????????
+        //数据来自0号顶点缓冲区，输入频率是逐顶点输入
         pipelineCiPack.vertexInputBindings.emplace_back(VkVertexInputBindingDescription{0, sizeof(vertex), VK_VERTEX_INPUT_RATE_VERTEX});
-        //location?0?????0???????vec2??VK_FORMAT_R32G32_SFLOAT??offsetof??position?vertex??????
+        //location为0，数据来自0号顶点缓冲区，vec2对应VK_FORMAT_R32G32_SFLOAT，用offsetof计算position在vertex中的起始位置
         pipelineCiPack.vertexInputAttributes.emplace_back(VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(vertex, position)});
-        //location?1?????0???????vec4??VK_FORMAT_R32G32B32A32_SFLOAT??offsetof??color?vertex??????
+        //location为1，数据来自0号顶点缓冲区，vec4对应VK_FORMAT_R32G32B32A32_SFLOAT，用offsetof计算color在vertex中的起始位置
         pipelineCiPack.vertexInputAttributes.emplace_back(VkVertexInputAttributeDescription{1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(vertex, color)});
 
-        //????1?????????????????
+        //数据来自1号顶点缓冲区，输入频率是逐实例输入
         pipelineCiPack.vertexInputBindings.emplace_back(VkVertexInputBindingDescription
-                                                        {   1,  // ??????? vkCmdBindVertexBuffers ??????
-                                                            sizeof(glm::vec2),  // ??????????
-                                                            VK_VERTEX_INPUT_RATE_INSTANCE // ?????VK_VERTEX_INPUT_RATE_VERTEX(???) ? VK_VERTEX_INPUT_RATE_INSTANCE(???)
+                                                        {   1,  // 绑定槽号，对应 vkCmdBindVertexBuffers 的第几个缓冲
+                                                            sizeof(glm::vec2),  // 每个顶点占用多少字节
+                                                            VK_VERTEX_INPUT_RATE_INSTANCE // 数据速率：VK_VERTEX_INPUT_RATE_VERTEX(逐顶点) 或 VK_VERTEX_INPUT_RATE_INSTANCE(逐实例)
                                                         });
-        //location?2?????1???????vec2??VK_FORMAT_R32G32_SFLOAT
+        //location为2，数据来自1号顶点缓冲区，vec2对应VK_FORMAT_R32G32_SFLOAT
         pipelineCiPack.vertexInputAttributes.emplace_back(VkVertexInputAttributeDescription
                                                           {
-                                                              2,    // shader ? layout(location = X)
-                                                              1,    // ??????
-                                                              VK_FORMAT_R32G32_SFLOAT, // ???????vec2 = VK_FORMAT_R32G32_SFLOAT?
-                                                              0     // ???????
+                                                              2,    // shader 中 layout(location = X)
+                                                              1,    // 对应绑定槽号
+                                                              VK_FORMAT_R32G32_SFLOAT, // 顶点属性类型（vec2 = VK_FORMAT_R32G32_SFLOAT）
+                                                              0     // 顶点结构内偏移
                                                           });
 
 
-        //?????????????????VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST?VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
+        //只绘制一个三角型，所以图元拓扑类型VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST或VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
         pipelineCiPack.inputAssemblyStateCi.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-        //??????????????
+        //指定视口和剪裁范围，填满屏幕
         pipelineCiPack.viewports.emplace_back(VkViewport{0.f, 0.f, float(windowSize.width), float(windowSize.height), 0.f, 1.f});
         pipelineCiPack.scissors.emplace_back(VkRect2D{VkOffset2D{}, windowSize});
 
-        //???????????????????
+        //不开多重采样，所以每个像素点采样一次：
         pipelineCiPack.multisampleStateCi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-        //?????????RGBA?????????????
+        //不开启混色，只指定RGBA四通道的写入遮罩为全部写入
         VkPipelineColorBlendAttachmentState Pcbas = {};
         Pcbas.colorWriteMask =  VK_COLOR_COMPONENT_R_BIT |
                                 VK_COLOR_COMPONENT_G_BIT |
@@ -205,7 +205,7 @@ void CreatePipeline() {
     };
     graphicsBase::Base().AddCallback_CreateSwapchain(Create);
     graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
-    //??Create()?????
+    //调用Create()以创建管线
     Create();
 }
 
@@ -225,10 +225,10 @@ int main/*_mian*/(int argc, char *argv[])
     CreateLayout();
     CreatePipeline();
 
-    //?????????
+    //以置位状态创建栅栏
     vulkan::fence fence(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    //???????
+    //创建二值信号量
     semaphore semaphore_imageIsAvailable;
     semaphore semaphore_renderingIsOver;
 
@@ -239,16 +239,16 @@ int main/*_mian*/(int argc, char *argv[])
     VkClearValue clearColor = {};
     clearColor.color = { 0.0f, 0.5f, 1.f, 1.f };
 
-    ///*?????*/
+    ///*绘制三角形*/
     std::vector<vertex> vertices = {
         { {  .0f, -.5f }, { 1, 0, 0, 1 } },
         { { -.5f,  .5f }, { 0, 1, 0, 1 } },
         { {  .5f,  .5f }, { 0, 0, 1, 1 } }
     };
     std::vector<glm::vec2> offsets = {
-        glm::vec2(.0f, .0f),
-        glm::vec2(-.5f, .0f),
-        glm::vec2(.5f, .0f),
+        glm::vec2( 0.0f, 0.0f ),
+        glm::vec2(-0.5f, 0.0f ),
+        glm::vec2( 0.5f, 0.0f )
     };
     vertexBuffer vertexBuffer_perVertex(vertices.size() * sizeof(vertex));
     vertexBuffer_perVertex.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
@@ -256,7 +256,7 @@ int main/*_mian*/(int argc, char *argv[])
     vertexBuffer vertexBuffer_perInstance(offsets.size() * sizeof(glm::vec2));
     vertexBuffer_perInstance.TransferData(offsets.data(),vertices.size() * sizeof(glm::vec2));
 
-    /* ?????
+    /* 绘制长方形
     std::vector<vertex> vertices = {
         { { -.5f, -.5f }, { 1, 1, 0, 1 } },
         { {  .5f, -.5f }, { 1, 0, 0, 1 } },
@@ -275,12 +275,12 @@ int main/*_mian*/(int argc, char *argv[])
     */
 
 
-    /*??????
+    /*绘制粉色爱心
     std::vector<vertex> vertices;
 
     glm::vec4 pink = {1.0f, 0.4f, 0.7f, 1.0f};
 
-    // ???
+    // 中心点
     vertices.push_back({ {0.0f, 0.0f}, pink });
 
     const int SEGMENTS = 64;
@@ -293,7 +293,7 @@ int main/*_mian*/(int argc, char *argv[])
                 - 2 * cosf(3 * t)
                 - cosf(4 * t);
 
-        // ?????180�
+        // 缩放并旋转180°
         x = -x / 18.0f;
         y = -y / 18.0f;
 
@@ -305,7 +305,7 @@ int main/*_mian*/(int argc, char *argv[])
     std::vector<uint16_t> indices;
 
     for (uint16_t i = 1; i <= SEGMENTS; ++i) {
-        indices.push_back(0);     // ???
+        indices.push_back(0);     // 中心点
         indices.push_back(i);
         indices.push_back(i + 1);
     }
@@ -313,30 +313,30 @@ int main/*_mian*/(int argc, char *argv[])
     index_buffer.TransferData(indices.data(),indices.size() * sizeof(uint16_t));
     */
     while (!glfwWindowShouldClose(pWindow)) {
-        //????????????
+        //窗口最小化时停止渲染循环
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED)){
             glfwWaitEvents();
         }
 
-        //????
+        //重置栅栏
         fence.Reset();
 
-        //?????????
+        //获取交换链图像索引
         graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
         auto imageIndex = graphicsBase::Base().CurrentImageIndex();
 
 
-        //??????
+        //开始录制命令
         commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        //??????
+        //开始渲染通道
         rpwf.renderPass.CmdBegin(commandBuffer, rpwf.framebuffers[imageIndex], { {}, windowSize }, clearColor);
 
-        //??????
+        //绑定顶点缓冲
         // /VkDeviceSize offset = 0;
         // vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertex_buffer.Address(), &offset);
 
-        // //??????
+        // //绑定索引缓冲
         // vkCmdBindIndexBuffer(commandBuffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
         // vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
@@ -352,22 +352,22 @@ int main/*_mian*/(int argc, char *argv[])
 
         vkCmdDraw(commandBuffer, 3, 3, 0, 0);
 
-        //??????
+        //结束渲染通道
         rpwf.renderPass.CmdEnd(commandBuffer);
 
-        //??????
+        //结束录制命令
         commandBuffer.End();
 
-        //??????
+        //提交命令缓冲
         graphicsBase::Base().SubmitCommandBuffer_Graphics(commandBuffer, semaphore_imageIsAvailable, semaphore_renderingIsOver, fence);
 
-        //????
+        //呈现图像
         graphicsBase::Base().PresentImage(semaphore_renderingIsOver);
 
         glfwPollEvents();
         TitleFps();
 
-        //?????fence
+        //等待并重置fence
         fence.WaitAndReset();
 
     }
@@ -391,7 +391,7 @@ struct Texture {
     VkExtent2D extent;
 };
 
-// ----------- ?????????????????-----------
+// ----------- 工具函数（你可能已有，可直接复用）-----------
 uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
@@ -609,7 +609,7 @@ VkSampler CreateTextureSampler(VkDevice device)
     return sampler;
 }
 
-// ----------- ????????????? -----------
+// ----------- 主函数：加载图片并生成纹理 -----------
 Texture LoadTexture(VkDevice device,
                     VkPhysicalDevice physicalDevice,
                     VkCommandPool commandPool,
@@ -679,12 +679,12 @@ void DestroyTexture(VkDevice device, Texture& texture) {
     if (texture.memory != (VkDeviceMemory)VK_NULL_HANDLE)
         vkFreeMemory(device, texture.memory, nullptr);
 
-    texture = Texture{}; // ??????
+    texture = Texture{}; // 重置为默认值
 }
 
 void ClearColorImage(VkCommandBuffer commandBuffer,VkImage swapChainImage){
 
-    //????
+    //清屏命令
     VkClearColorValue clearColor = { {1.0f, 0.0f, 0.0f, 1.0f} };
     VkImageSubresourceRange range = {};
     range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -696,7 +696,7 @@ void ClearColorImage(VkCommandBuffer commandBuffer,VkImage swapChainImage){
     vkCmdClearColorImage(
         commandBuffer,
         swapChainImage,
-        VK_IMAGE_LAYOUT_GENERAL,  // ???????? PRESENT_SRC_KHR, ???? GENERAL
+        VK_IMAGE_LAYOUT_GENERAL,  // 如果交换链布局是 PRESENT_SRC_KHR, 先转换到 GENERAL
         &clearColor,
         1,
         &range
@@ -712,8 +712,8 @@ void BlitImageToSwapchain(
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // ????
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;     // blit ???
+    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // 当前布局
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;     // blit 源需要
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = srcImage;
@@ -727,7 +727,7 @@ void BlitImageToSwapchain(
 
     vkCmdPipelineBarrier(
         cmd,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // ???????
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // 根据需要可优化
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         0,
         0, nullptr,
@@ -735,8 +735,8 @@ void BlitImageToSwapchain(
         1, &barrier
     );
 
-    // ??????? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-    // ???????? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    // 源图像：一般是 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+    // 目标图像：一般是 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
     VkImageBlit blit{};
     blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit.srcSubresource.layerCount = 1;
@@ -748,7 +748,7 @@ void BlitImageToSwapchain(
     blit.dstOffsets[0] = {0, 0, 0};
     blit.dstOffsets[1] = {(int32_t)desExtent.width, (int32_t)desExtent.height, 1};
 
-    // ??????????
+    // 执行线性滤波缩放拷贝
     vkCmdBlitImage(
         cmd,
         srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -768,10 +768,10 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         return -1;
 
     using namespace vulkan;
-    //?????????
+    //以置位状态创建栅栏
     vulkan::fence fence(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    //???????
+    //创建二值信号量
     semaphore semaphore_imageIsAvailable;
     semaphore semaphore_renderingIsOver;
 
@@ -782,7 +782,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
 
 
     while (!glfwWindowShouldClose(pWindow)) {
-        //????????????
+        //窗口最小化时停止渲染循环
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED)){
             glfwWaitEvents();
         }
@@ -794,7 +794,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         //              graphicsBase::Base().Queue_Graphics(),
         //              "E:/project/SPL_Camera/1733392738313.png");
 
-        //????
+        //加载图像
         int texWidth, texHeight, texChannels;
         stbi_uc* pixels = stbi_load("E:/project/SPL_Camera/1733392738313.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         if (!pixels){
@@ -804,7 +804,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         VkDeviceSize imageSize = texWidth * texHeight * 4;
         VkExtent2D RenderExtent = {(uint32_t)texWidth,(uint32_t)texHeight};
 
-        //??buffer
+        //创建buffer
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = imageSize;
@@ -814,13 +814,13 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         VkMemoryPropertyFlags desiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         bufferMemory stagingBufferMemory(bufferInfo,desiredMemoryProperties);
 
-        //??cpu???gpu??
+        //上传cpu数据至gpu内存
         stagingBufferMemory.BufferData(pixels,imageSize,0);
 
-        //????
+        //释放图像
         stbi_image_free(pixels);
 
-        //??image -->???GPU????????
+        //创建image -->可以被GPU读取和采样的数据
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -848,20 +848,20 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         // texture.sampler = CreateTextureSampler(graphicsBase::Base().Device());
         //texture.image = image;
 
-        //?????????
+        //获取交换链图像索引
         graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
         auto imageIndex = graphicsBase::Base().CurrentImageIndex();
-        //???????
+        //获取交换链图像
         auto swapChainImage = graphicsBase::Base().SwapchainImage(imageIndex);
 
-        //??????
+        //开始录制命令
         commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;         // ????
-        barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;   // ???????
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;         // 当前布局
+        barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;   // 呈现需要的布局
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = swapChainImage;
@@ -870,12 +870,12 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
-        barrier.srcAccessMask = 0; // ? UNDEFINED???????
+        barrier.srcAccessMask = 0; // 从 UNDEFINED，没有有效访问
         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
         vkCmdPipelineBarrier(
             commandBuffer,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // ?????
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // 从未初始化
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             0, 0, nullptr, 0, nullptr, 1, &barrier
         );
@@ -887,7 +887,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
                              swapChainImage,
                              graphicsBase::Base().SwapchainCreateInfo().imageExtent);
 
-        //??????
+        //结束录制命令
         commandBuffer.End();
 
         fence.Reset();
@@ -897,7 +897,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
         glfwPollEvents();
         TitleFps();
 
-        //?????fence
+        //等待并重置fence
         fence.WaitAndReset();
 
         //DestroyTexture(graphicsBase::Base().Device(),texture);
@@ -916,10 +916,10 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
         return -1;
 
     using namespace vulkan;
-    //?????????
+    //以置位状态创建栅栏
     vulkan::fence fence(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    //???????
+    //创建二值信号量
     semaphore semaphore_imageIsAvailable;
     semaphore semaphore_renderingIsOver;
 
@@ -928,7 +928,7 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
     commandPool.AllocateBuffers(commandBuffer);
 
 
-    //????
+    //加载图像
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load("E:/project/SPL_Camera/1733392738313.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels){
@@ -938,7 +938,7 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     VkExtent2D RenderExtent = {(uint32_t)texWidth,(uint32_t)texHeight};
 
-    //??buffer
+    //创建buffer
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = imageSize;
@@ -948,15 +948,15 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
     VkMemoryPropertyFlags desiredMemoryProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     bufferMemory stagingBufferMemory(bufferInfo,desiredMemoryProperties);
 
-    //??cpu???gpu??
+    //上传cpu数据至gpu内存
     stagingBufferMemory.BufferData(pixels,imageSize,0);
 
-    //????
+    //释放图像
     stbi_image_free(pixels);
 
 
 
-    //??image -->???GPU????????
+    //创建image -->可以被GPU读取和采样的数据
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -975,7 +975,7 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
 
 
     while (!glfwWindowShouldClose(pWindow)) {
-        //????????????
+        //窗口最小化时停止渲染循环
         while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED)){
             glfwWaitEvents();
         }
@@ -990,20 +990,20 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
         // texture.view = CreateImageView(graphicsBase::Base().Device(), image, VK_FORMAT_R8G8B8A8_SRGB);
         // texture.sampler = CreateTextureSampler(graphicsBase::Base().Device());
 
-        //?????????
+        //获取交换链图像索引
         graphicsBase::Base().SwapImage(semaphore_imageIsAvailable);
         auto imageIndex = graphicsBase::Base().CurrentImageIndex();
-        //???????
+        //获取交换链图像
         auto swapChainImage = graphicsBase::Base().SwapchainImage(imageIndex);
 
-        //??????
+        //开始录制命令
         commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;         // ????
-        barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;   // ???????
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;         // 当前布局
+        barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;   // 呈现需要的布局
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = swapChainImage;
@@ -1012,12 +1012,12 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
-        barrier.srcAccessMask = 0; // ? UNDEFINED???????
+        barrier.srcAccessMask = 0; // 从 UNDEFINED，没有有效访问
         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
         vkCmdPipelineBarrier(
                     commandBuffer,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // ?????
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // 从未初始化
                     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                     0, 0, nullptr, 0, nullptr, 1, &barrier
                     );
@@ -1030,7 +1030,7 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
                              graphicsBase::Base().SwapchainCreateInfo().imageExtent);
 
         //ClearColorImage(commandBuffer,swapChainImage);
-        //??????
+        //结束录制命令
         commandBuffer.End();
 
         fence.Reset();
@@ -1040,7 +1040,7 @@ int main_test_load_texture_test(/*int argc, char *argv[]*/)
         glfwPollEvents();
         TitleFps();
 
-        //?????fence
+        //等待并重置fence
         fence.WaitAndReset();
 
 

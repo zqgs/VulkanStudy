@@ -9,18 +9,18 @@
 #define ENABLE_DEBUG_MESSENGER false
 #endif
 
-//????????Vulkan????
+//用于析构器中销毁Vulkan对象的宏
 #define DestroyHandleBy(Func) if (handle) { Func(graphicsBase::Base().Device(), handle, nullptr); handle = (decltype(handle))VK_NULL_HANDLE; }
-//??????????
+//用于移动构造器中的宏
 #define MoveHandle handle = other.handle; other.handle = (decltype(other.handle))VK_NULL_HANDLE;
-//????????,????handle???????????????handle??????
+//该宏定义转换函数,通过返回handle将封装类型对象隐式转换到被封装handle的原始类型：
 #define DefineHandleTypeOperator(Type, Member) operator Type() const { return Member; }
-//????????????????handle????
+//该宏定义转换函数，用于取得被封装handle的地址：
 #define DefineAddressFunction const decltype(handle)* Address() const { return &handle; }
-//??????????????????????????????
+//这个宏用来把函数分割成能被多次执行，以及只执行一次的两个部分
 #define ExecuteOnce(...) { static bool executed = false; if (executed) return __VA_ARGS__; executed = true; }
 
-//??vulkan?????????Vulkan??????????????
+//定义vulkan命名空间，之后会把Vulkan中一些基本对象的封装写在其中
 namespace vulkan {
     static VkExtent2D defaultWindowSize = { 1280, 720 };
 #ifdef VK_RESULT_THROW
@@ -44,16 +44,16 @@ namespace vulkan {
         }
     };
 
-#elif VK_RESULT_NODISCARD //??2??????????????????
+#elif VK_RESULT_NODISCARD //情况2：若抛弃函数返回值，让编译器发出警告
     struct [[nodiscard]] result_t {
         VkResult result;
         result_t(VkResult result) :result(result) {}
         operator VkResult() const { return result; }
     };
-    //?????????????????????
+    //在本文件中关闭弃值提醒（因为我懒得做处理）
     #pragma warning(disable:4834)
     #pragma warning(disable:6031)
-#else //??3?????
+#else //情况3：啥都不干
     using result_t = VkResult;
 #endif
 
@@ -62,16 +62,16 @@ namespace vulkan {
         T* const pArray = nullptr;
         size_t count = 0;
     public:
-        //???????count?0
+        //从空参数构造，count为0
         arrayRef() = default;
-        //????????count?1
+        //从单个对象构造，count为1
         arrayRef(T& data) :pArray(&data), count(1) {}
-        //???????
+        //从顶级数组构造
         template<size_t ElementCount>
         arrayRef(T(&data)[ElementCount]) : pArray(data), count(ElementCount) {}
-        //??????????
+        //从指针和元素个数构造
         arrayRef(T* pData, size_t elementCount) :pArray(pData), count(elementCount) {}
-        //?T?const??????????const?????arrayRef??
+        //若T带const修饰，兼容从对应的无const修饰版本的arrayRef构造
         arrayRef(const arrayRef<std::remove_const<T>>& other) :pArray(other.Pointer()), count(other.Count()) {}
         //Getter
         T* Pointer() const { return pArray; }
@@ -81,21 +81,21 @@ namespace vulkan {
         T* begin() const { return pArray; }
         T* end() const { return pArray + count; }
         //Non-const Function
-        //????/?????arrayRef????????????????????????????C++????????????????????
+        //禁止复制/移动赋值（arrayRef旨在模拟“对数组的引用”，用处归根结底只是传参，故使其同C++引用的底层地址一样，防止初始化后被修改）
         arrayRef& operator=(const arrayRef&) = delete;
     };
 
 
-/*graphicsBase????
- * 1.??vkInstance??
- * 2.??debugMessager
- * 3.??surface
- * 4.??????
- * 5.????????????
- * 6.???????????
- * 7.???????????????
+/*graphicsBase创建逻辑
+ * 1.创建vkInstance实例
+ * 2.开启debugMessager
+ * 3.创建surface
+ * 4.枚举物理设备
+ * 5.根据物理设备创建逻辑设备
+ * 6.根据物理设备创建交换链
+ * 7.根据交换链创建队列、图像、视图
  */
-    class graphicsBasePlus; //graphicsBasePlus??graphicsBase??????????????Vulkan???????????
+    class graphicsBasePlus; //graphicsBasePlus扩展graphicsBase的功能，用于默认创建一些对于Vulkan图形编程有必要的对象。
     class graphicsBase{
         //static graphicsBase singleton;
         graphicsBase() = default;
@@ -115,7 +115,7 @@ namespace vulkan {
         std::vector<const char*> instanceLayers;
         std::vector<const char*> instanceExtensions;
 
-        //??????????????????????
+        //向层容器和扩展容器中添加字符串，并确保不重复
         static void AddLayerOrExtension(std::vector<const char*>& container,const char* name){
             for(auto& i : container){
                 if(!strcmp(name,i)){
@@ -124,34 +124,34 @@ namespace vulkan {
             }
             container.push_back(name);
         }
-//??vkInstance??
+//创建vkInstance实例
     public:
         VkInstance Instance();
         const std::vector<const char*>& InstanceLayers() const;
         const std::vector<const char*>& InstanceExtensions() const;
         void AddInstanceLayers(const char* layerName);
         void AddInstanceExtensions(const char* layerName);
-        //????????Vulkan??
+        //以下函数用于创建Vulkan实例
         result_t CreateInstance(VkInstanceCreateFlags flag = 0);
-        //????????Vulkan???????
+        //以下函数用于创建Vulkan实例失败后执行
         VkResult CheckInstanceLayers(std::vector<const char*>& layersToCheck);
         void InstanceLayers(const std::vector<const char*>& layerNames);
         VkResult CheckInstanceExtensions(std::vector<const char*>& extensionsToCheck,const char* layerName);
         void InstanceExtensions(const std::vector<const char*>& extensionsNames);
 
 
-/*??debug messenger???
- * 1.???Vulkan????????debug messenger???????????????????
- * 2.??debug messenger???????????
- * 3.Vulkan?????????????????????vkGetInstanceProcAddr(...)???
+/*创建debug messenger的步骤
+ * 1.创建了Vulkan实例后，即可创建debug messenger，以便检查初始化流程中的所有其他步骤。
+ * 2.创建debug messenger可以粗略地说是只有一步
+ * 3.Vulkan中，扩展相关的函数，若非设备特定，大都通过vkGetInstanceProcAddr(...)来获取
 */
     private:
         VkDebugUtilsMessengerEXT debugMessenger;
-        //????????debug messenger
+        //以下函数用于创建debug messenger
         VkResult CreateDebugMessenger();
 
-/*??window surface???
- * ??:????????surface,?????????
+/*创建window surface的步骤
+ * 注意:多窗口会存在多个surface,也会存在多个交换链
 */
     private:
         VkSurfaceKHR surface;
@@ -159,41 +159,41 @@ namespace vulkan {
         VkSurfaceKHR Surface() const;
         void Surface(VkSurfaceKHR vk_s);
 
-/*?????????
- * 1.????????
- * 2.?????????????????????????????????????????
- * 3.???????????????????
- * 4.?vkCreateDevice(...)???????????
- * 5.????????????????????????
- *  ??:
- *      1.????(??gpu)??????gpu???????gpu????????
- *      2.?????Vulkan ? ?????????????????????????
- *      3.??????????n?????
+/*创建逻辑设备的步骤
+ * 1.获取物理设备列表
+ * 2.检查物理设备是否满足所需的队列族类型，从中选择能满足要求的设备并顺便取得队列族索引
+ * 3.确定所需的设备级别扩展，不检查是否可用
+ * 4.用vkCreateDevice(...)创建逻辑设备，取得队列
+ * 5.取得物理设备属性、物理设备内存属性，以备之后使用
+ *  注意:
+ *      1.物理设备(真实gpu)。仅用来查询gpu能力，选择合适gpu用来创建逻辑设备
+ *      2.逻辑设备。Vulkan 中 所有渲染、计算、内存操作必须通过逻辑设备提交命令。
+ *      3.一个物理设备可以创建n个逻辑设备
 */
     private:
-        //????
+        //物理设备
         VkPhysicalDevice physicalDevice;
         VkPhysicalDeviceProperties physicalDeviceProperties;
         VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
         std::vector<VkPhysicalDevice> availablePhysicalDevices;
 
-        //????
+        //逻辑设备
         VkDevice device;
-        //??????0??????????VK_QUEUE_FAMILY_IGNORED??UINT32_MAX???????????
+        //有效的索引从0开始，因此使用特殊值VK_QUEUE_FAMILY_IGNORED（为UINT32_MAX）为队列族索引的默认值
         uint32_t queueFamilyIndex_graphics = VK_QUEUE_FAMILY_IGNORED;
         uint32_t queueFamilyIndex_presentation = VK_QUEUE_FAMILY_IGNORED;
         uint32_t queueFamilyIndex_compute = VK_QUEUE_FAMILY_IGNORED;
 
-         //????
+         //图形队列
         VkQueue queue_graphics;
-        //????
+        //呈现队列
         VkQueue queue_presentation;
-        //????
+        //计算队列
         VkQueue queue_compute;
 
         std::vector<const char*> deviceExtensions;
 
-        //????DeterminePhysicalDevice(...)?????????????????????????????????????queueFamilyIndices???????????????????
+        //该函数被DeterminePhysicalDevice(...)调用，用于检查物理设备是否满足所需的队列族类型，并将对应的队列族索引返回到queueFamilyIndices，执行成功时直接将索引写入相应成员变量
         VkResult GetQueueFamilyIndices(VkPhysicalDevice physicalDevice, bool enableGraphicsQueue, bool enableComputeQueue, uint32_t (&queueFamilyIndices)[3]);
     public:
         //Getter
@@ -210,30 +210,30 @@ namespace vulkan {
         VkQueue Queue_Presentation() const;
         VkQueue Queue_Compute() const;
         const std::vector<const char*>& DeviceExtensions() const;
-        //????????????
+        //该函数用于创建逻辑设备前
         void AddDeviceExtension(const char* extensionName);
-        //???????????
+        //该函数用于获取物理设备
         VkResult GetPhysicalDevices();
-        //????????????????GetQueueFamilyIndices(...)???????
+        //该函数用于指定所用物理设备并调用GetQueueFamilyIndices(...)取得队列族索引
         VkResult DeterminePhysicalDevice(uint32_t deviceIndex = 0, bool enableGraphicsQueue = true, bool enableComputeQueue = true);
-        //?????????????????
+        //该函数用于创建逻辑设备，并取得队列
         VkResult CreateDevice(VkDeviceCreateFlags flags = 0);
-        //???????????????
+        //以下函数用于创建逻辑设备失败后
         VkResult CheckDeviceExtensions(std::vector<const char*> extensionsToCheck, const char* layerName = nullptr) const;
         void DeviceExtensions(const std::vector<const char*>& extensionNames);
 
-/*????????
- * 1.???????
- * 2.??????????????????????image view
+/*创建交换链的步骤
+ * 1.填写一大堆信息
+ * 2.创建交换链并取得交换链图像，为交换链图像创建image view
 */
     private:
         std::vector <VkSurfaceFormatKHR> availableSurfaceFormats;
         VkSwapchainKHR swapchain;
         std::vector <VkImage> swapchainImages;
         std::vector <VkImageView> swapchainImageViews;
-        //?????????????????
+        //保存交换链的创建信息以便重建交换链
         VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
-        //????CreateSwapchain(...)?RecreateSwapchain()??
+        //该函数被CreateSwapchain(...)和RecreateSwapchain()调用
         VkResult CreateSwapchain_Internal();
 
     public:
@@ -248,12 +248,12 @@ namespace vulkan {
         const VkSwapchainCreateInfoKHR& SwapchainCreateInfo() const;
         VkResult GetSurfaceFormats();
         VkResult SetSurfaceFormat(VkSurfaceFormatKHR surfaceFormat);
-        //??????????
+        //该函数用于创建交换链
         VkResult CreateSwapchain(bool limitFrameRate = true, VkSwapchainCreateFlagsKHR flags = 0);
-        //??????????
+        //该函数用于重建交换链
         VkResult RecreateSwapchain();
 
-/*Vulkan??*/
+/*Vulkan版本*/
     private:
         uint32_t apiVersion = VK_API_VERSION_1_0;
     public:
@@ -261,7 +261,7 @@ namespace vulkan {
         uint32_t ApiVersion() const;
         VkResult UseLatestApiVersion();
 
-/*??????????????*/
+/*创建和销毁交换链时的回调函数*/
     private:
         std::vector<std::function<void()>> callbacks_createSwapchain;
         std::vector<std::function<void()>> callbacks_destroySwapchain;
@@ -270,7 +270,7 @@ namespace vulkan {
         void AddCallback_DestroySwapchain(std::function<void()> function);
     private:
         static void ExecuteCallbacks(std::vector<std::function<void()>> callbacks);
-/*???????????????*/
+/*创建和销毁逻辑设备时的回调函数*/
     private:
         static std::mutex callback_mtx;
         std::vector<std::function<void()>> callbacks_createDevice;
@@ -279,58 +279,58 @@ namespace vulkan {
     public:
         void AddCallback_CreateDevice(std::function<void()> function);
         void AddCallback_DestroyDevice(std::function<void()> function);
-/*????????*/
+/*等待逻辑设备空闲*/
     public:
         VkResult WaitIdle() const;
 
 /*
- * ??????
- *    ??:????????????????????
+ * 重建逻辑设备
+ *    比如:运行过程中切换显卡，或逻辑设备丢失等情况
  */
     public:
         VkResult RecreateDevice(VkDeviceCreateFlags flags = 0);
 
-/*?????????vulkan*/
+/*程序运行过程中销毁vulkan*/
     public:
         void Terminate();
 
- //???????
+ //获取交换链索引
     private:
         uint32_t currentImageIndex = 0;
     public:
         uint32_t CurrentImageIndex(){return currentImageIndex;}
         result_t SwapImage(VkSemaphore semaphore_imageIsAvailable);
 
-//???????
+//提交命令缓冲区
     public:
-        //????????????
+        //提交命令缓冲区到图形队列
         result_t SubmitCommandBuffer_Graphics(VkSubmitInfo& submitInfo, VkFence fence = (VkFence)VK_NULL_HANDLE) const;
-        //?????????????????
+        //提交命令缓冲区到图形队列的常用参数
         result_t SubmitCommandBuffer_Graphics(VkCommandBuffer commandBuffer,
             VkSemaphore semaphore_imageIsAvailable = (VkSemaphore)VK_NULL_HANDLE,
             VkSemaphore semaphore_renderingIsOver = (VkSemaphore)VK_NULL_HANDLE,
             VkFence fence = (VkFence)VK_NULL_HANDLE,
             VkPipelineStageFlags waitDstStage_imageIsAvailable = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT) const;
 
-        //?????????????????????
+        //提交命令缓冲区到图形队列只使用栅栏常用参数
         result_t SubmitCommandBuffer_Graphics(VkCommandBuffer commandBuffer, VkFence fence = (VkFence)VK_NULL_HANDLE) const;
 
-        //?????????????
+        //将命令缓冲区提交的计算队列
         result_t SubmitCommandBuffer_Compute(VkSubmitInfo& submitInfo, VkFence fence = (VkFence)VK_NULL_HANDLE) const;
 
-        //??????????????????????
+        //将命令缓冲区提交的计算队列只使用栅栏常用参数
         result_t SubmitCommandBuffer_Compute(VkCommandBuffer commandBuffer, VkFence fence = (VkFence)VK_NULL_HANDLE) const;
 
-//????
+//呈现图像
         result_t PresentImage(VkPresentInfoKHR& presentInfo);
-        //?????????
+        //呈现图像的常用参数
         result_t PresentImage(VkSemaphore semaphore_renderingIsOver = (VkSemaphore)VK_NULL_HANDLE);
     public:
         result_t SubmitCommandBuffer_Presentation(VkCommandBuffer commandBuffer,
             VkSemaphore semaphore_renderingIsOver = (VkSemaphore)VK_NULL_HANDLE,
             VkSemaphore semaphore_ownershipIsTransfered = (VkSemaphore)VK_NULL_HANDLE,
             VkFence fence = (VkFence)VK_NULL_HANDLE) const;
-//????
+//内存屏障
     public:
         void CmdTransferImageOwnership(VkCommandBuffer commandBuffer) const;
     };
@@ -340,41 +340,41 @@ namespace vulkan {
      | vkAcquireNextImageKHR()        |
      |------------------------------>|
      |                               |  signal semaphoreA when image available
-     | record command buffer          |  <-- CPU???????????
+     | record command buffer          |  <-- CPU可以立即录制命令缓冲区
      |------------------------------>|
      | vkQueueSubmit(waitSemaphore=A, signalSemaphore=B)
      |------------------------------>|
-     |                               |  GPU ???? semaphoreA
-     |                               |  semaphoreA triggered -> ???????
-     |                               |  ???? -> ?? semaphoreB & fence
+     |                               |  GPU 挂起等待 semaphoreA
+     |                               |  semaphoreA triggered -> 执行命令缓冲区
+     |                               |  渲染完成 -> 触发 semaphoreB & fence
      | waitFence / CPU reuse cmdBuf  |
      |                               |
      | vkQueuePresentKHR(waitSemaphore=B)
      |------------------------------>|
-     |                               |  GPU ?? semaphoreB -> ????
+     |                               |  GPU 等待 semaphoreB -> 呈现图像
      |                               |
 
-    ??? A?imageAvailable?
-        1.? vkAcquireNextImageKHR ??
-        2.GPU ? vkQueueSubmit ??????????????
-        3.CPU ??????????????????
+    信号量 A（imageAvailable）
+        1.由 vkAcquireNextImageKHR 触发
+        2.GPU 在 vkQueueSubmit 时等待它，确保交换链图像可用
+        3.CPU 可在此阶段自由录制命令缓冲区，不阻塞
 
-    ??? B?renderFinished?
-        1.? GPU ?????????????
-        2.???? vkQueuePresentKHR ????????????
+    信号量 B（renderFinished）
+        1.由 GPU 在命令缓冲区执行完成时触发
+        2.呈现队列 vkQueuePresentKHR 等待它，保证图像已渲染完
 
-    CPU/GPU ??
-        CPU??? image???????????????? fence????
-        GPU?????? A?????????????? B???
+    CPU/GPU 分工
+        CPU：获取 image、录制命令缓冲区、提交队列、等待 fence（可选）
+        GPU：等待信号量 A、执行命令缓冲区、触发信号量 B、呈现
  */
-//???? -- ??cpu?gpu????????
+//创建栅栏 -- 介于cpu和gpu之间的一种信号量
     class fence{
         VkFence handle = (VkFence)VK_NULL_HANDLE;
     public:
         fence(VkFenceCreateInfo& createInfo) {
             Create(createInfo);
         }
-        //?????????????
+        //默认构造器创建未置位的栅栏
         fence(VkFenceCreateFlags flags = 0) {
             Create(flags);
         }
@@ -398,7 +398,7 @@ namespace vulkan {
             }
             return result;
         }
-        //???????,???????
+        //此情形出现较多,重置后立即等待
         result_t WaitAndReset() const {
             VkResult result = Wait();
             result || (result = Reset());
@@ -406,7 +406,7 @@ namespace vulkan {
         }
         result_t Status() const{
             VkResult result = vkGetFenceStatus(graphicsBase::Base().Device(), handle);
-            if (result < 0){ //vkGetFenceStatus(...)?????????????????result???0
+            if (result < 0){ //vkGetFenceStatus(...)成功时有两种结果，所以不能仅仅判断result是否非0
                 qDebug("[ fence ] ERROR\nFailed to get the status of the fence!\nError code: %d\n", int32_t(result));
             }
             return result;
@@ -426,9 +426,9 @@ namespace vulkan {
         }
     };
 
-//????? -- ??GPU??????????
-    //1.2???????????????????????????
-    //???????????????????????????????????????????????????????????????????
+//创建信号量 -- 完全GPU内部使用的一种信号量
+    //1.2版本之后支持时间线信号量，时间线信号量兼顾了栅栏的功能
+    //时间线信号量并不完全涵盖二值信号量，在提交命令缓冲时可以替代二值信号量，在渲染玄幻获取下一张交换图像时或者呈现图像时必须使用二值信号量
     class semaphore{
         VkSemaphore handle = (VkSemaphore)VK_NULL_HANDLE;
     public:
@@ -457,7 +457,7 @@ namespace vulkan {
         }
     };
 
-//??Event?
+//创建Event类
     class event {
         VkEvent handle = (VkEvent)VK_NULL_HANDLE;
     public:
@@ -516,7 +516,7 @@ namespace vulkan {
         }
         result_t Status() const {
             VkResult result = vkGetEventStatus(graphicsBase::Base().Device(), handle);
-            if (result < 0){ //vkGetEventStatus(...)????????
+            if (result < 0){ //vkGetEventStatus(...)成功时有两种结果
                 qDebug("[ event ] ERROR\nFailed to get the status of the event!\nError code: %d\n", int32_t(result));
             }
             return result;
@@ -537,14 +537,14 @@ namespace vulkan {
         }
     };
 
-//???????
+//创建命令缓冲区
     //Command Buffer 1
-    // ??? vkCmdBindPipeline
-    // ??? vkCmdBindVertexBuffer
-    // ??? vkCmdDraw
-    // ??? vkCmdCopyBuffer
+    // ├── vkCmdBindPipeline
+    // ├── vkCmdBindVertexBuffer
+    // ├── vkCmdDraw
+    // └── vkCmdCopyBuffer
     class commandBuffer{
-        friend class commandPool; //??????commandPool?????????????????????????handle
+        friend class commandPool; //封装命令池的commandPool类负责分配和释放命令缓冲区，需要让其能访问私有成员handle
         VkCommandBuffer handle = (VkCommandBuffer)VK_NULL_HANDLE;
     public:
         commandBuffer() = default;
@@ -585,11 +585,11 @@ namespace vulkan {
         }
     };
 
-//?????
+//创建命令池
     //Command Pool
-    // ??? Command Buffer 1
-    // ??? Command Buffer 2
-    // ??? Command Buffer 3
+    // ├── Command Buffer 1
+    // ├── Command Buffer 2
+    // └── Command Buffer 3
     class commandPool {
         VkCommandPool handle = (VkCommandPool)VK_NULL_HANDLE;
     public:
@@ -646,7 +646,7 @@ namespace vulkan {
         }
     };
 
-//??RenderPass
+//创建RenderPass
     class renderPass {
         VkRenderPass handle = (VkRenderPass)VK_NULL_HANDLE;
     public:
@@ -692,7 +692,7 @@ namespace vulkan {
         }
     };
 
-//??framebuffer?
+//创建framebuffer类
     class framebuffer {
         VkFramebuffer handle = (VkFramebuffer)VK_NULL_HANDLE;
     public:
@@ -716,7 +716,7 @@ namespace vulkan {
         }
     };
 
-//????????
+//创建着色器模块类
     class shaderModule {
         VkShaderModule handle = (VkShaderModule)VK_NULL_HANDLE;
     public:
@@ -760,7 +760,7 @@ namespace vulkan {
             std::ifstream file(filepath, std::ios::ate | std::ios::binary);
             if (!file) {
                 qDebug("[ shader ] ERROR\nFailed to open the file: %s\n", filepath);
-                return VK_RESULT_MAX_ENUM; //????????????VK_ERROR_UNKNOWN
+                return VK_RESULT_MAX_ENUM; //没有合适的错误代码，别用VK_ERROR_UNKNOWN
             }
             size_t fileSize = size_t(file.tellg());
             std::vector<uint32_t> binaries(fileSize / 4);
@@ -777,7 +777,7 @@ namespace vulkan {
         }
     };
 
-//??pipeline layout
+//创建pipeline layout
     class pipelineLayout {
         VkPipelineLayout handle = (VkPipelineLayout)VK_NULL_HANDLE;
     public:
@@ -801,7 +801,7 @@ namespace vulkan {
         }
     };
 
-//??pipeline layout
+//创建pipeline layout
     class pipeline {
         VkPipeline handle = (VkPipeline)VK_NULL_HANDLE;
     public:
@@ -836,13 +836,13 @@ namespace vulkan {
         }
     };
 
-//??deviceMemory?
+//封装deviceMemory类
     class deviceMemory {
         VkDeviceMemory handle = (VkDeviceMemory)VK_NULL_HANDLE;
-        VkDeviceSize allocationSize = 0;            //?????????
-        VkMemoryPropertyFlags memoryProperties = 0; //????
+        VkDeviceSize allocationSize = 0;            //实际分配的内存大小
+        VkMemoryPropertyFlags memoryProperties = 0; //内存属性
         //--------------------
-        //????????????????host coherent????????
+        //该函数用于在映射内存区时，调整非host coherent的内存区域的范围
         VkDeviceSize AdjustNonCoherentMemoryRange(VkDeviceSize& size, VkDeviceSize& offset) const {
             const VkDeviceSize& nonCoherentAtomSize = graphicsBase::Base().PhysicalDeviceProperties().limits.nonCoherentAtomSize;
             VkDeviceSize _offset = offset;
@@ -851,7 +851,7 @@ namespace vulkan {
             return _offset - offset;
         }
     protected:
-        //??bufferMemory?imageMemory????????8???
+        //用于bufferMemory或imageMemory，定义于此以节省8个字节
         class AreBoundFlag {
             friend class bufferMemory;
             friend class imageMemory;
@@ -879,7 +879,7 @@ namespace vulkan {
         VkDeviceSize AllocationSize() const { return allocationSize; }
         VkMemoryPropertyFlags MemoryProperties() const { return memoryProperties; }
         //Const Function
-        //??host visible????
+        //映射host visible的内存区
         result_t MapMemory(void*& pData, VkDeviceSize size, VkDeviceSize offset = 0) const {
             VkDeviceSize inverseDeltaOffset;
             if (!(memoryProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
@@ -903,7 +903,7 @@ namespace vulkan {
             }
             return VK_SUCCESS;
         }
-        //????host visible????
+        //取消映射host visible的内存区
         result_t UnmapMemory(VkDeviceSize size, VkDeviceSize offset = 0) const {
             if (!(memoryProperties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
                 AdjustNonCoherentMemoryRange(size, offset);
@@ -921,7 +921,7 @@ namespace vulkan {
             vkUnmapMemory(graphicsBase::Base().Device(), handle);
             return VK_SUCCESS;
         }
-        //BufferData(...)?????????????????memcpy(...)??????????????????
+        //BufferData(...)用于方便地更新设备内存区，适用于用memcpy(...)向内存区写入数据后立刻取消映射的情况
         result_t BufferData(const void* pData_src, VkDeviceSize size, VkDeviceSize offset = 0) const {
             void* pData_dst;
             if (VkResult result = MapMemory(pData_dst, size, offset))
@@ -932,7 +932,7 @@ namespace vulkan {
         result_t BufferData(const void* data_src) const {
             return BufferData(&data_src, sizeof(data_src));
         }
-        //RetrieveData(...)????????????????????memcpy(...)??????????????????
+        //RetrieveData(...)用于方便地从设备内存区取回数据，适用于用memcpy(...)从内存区取得数据后立刻取消映射的情况
         result_t RetrieveData(void* pData_dst, VkDeviceSize size, VkDeviceSize offset = 0) const {
             void* pData_src;
             if (VkResult result = MapMemory(pData_src, size, offset))
@@ -944,22 +944,22 @@ namespace vulkan {
         result_t Allocate(VkMemoryAllocateInfo& allocateInfo) {
             if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount) {
                 qDebug("[ deviceMemory ] ERROR\nInvalid memory type index!\n");
-                return VK_RESULT_MAX_ENUM; //????????????VK_ERROR_UNKNOWN
+                return VK_RESULT_MAX_ENUM; //没有合适的错误代码，别用VK_ERROR_UNKNOWN
             }
             allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             if (VkResult result = vkAllocateMemory(graphicsBase::Base().Device(), &allocateInfo, nullptr, &handle)) {
                 qDebug("[ deviceMemory ] ERROR\nFailed to allocate memory!\nError code: %d\n", int32_t(result));
                 return result;
             }
-            //???????????
+            //记录实际分配的内存大小
             allocationSize = allocateInfo.allocationSize;
-            //??????
+            //取得内存属性
             memoryProperties = graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypes[allocateInfo.memoryTypeIndex].propertyFlags;
             return VK_SUCCESS;
         }
     };
 
-//??buffer: ???cpu????uint8_t* ??????
+//创建buffer: 类似于cpu内存中的uint8_t* 属于线性数据
     class buffer {
         VkBuffer handle = (VkBuffer)VK_NULL_HANDLE;
     public:
@@ -989,7 +989,7 @@ namespace vulkan {
                     break;
                 }
             }
-            //??????????????????????memoryAllocateInfo???????????
+            //不在此检查是否成功取得内存类型索引，因为会把memoryAllocateInfo返回出去，交由外部检查
             //if (memoryAllocateInfo.memoryTypeIndex == UINT32_MAX)
             //    outStream << std::format("[ buffer ] ERROR\nFailed to find any memory type satisfies all desired memory properties!\n");
             return memoryAllocateInfo;
@@ -1012,7 +1012,7 @@ namespace vulkan {
         }
     };
 
-//??bufferMemory?  -->??buffer??????????deviceMemory??,???????
+//封装bufferMemory类  -->包含buffer的创建与释放，内存由deviceMemory申请,然后绑定在一起
     class bufferMemory :public buffer, public deviceMemory {
     public:
         bufferMemory() = default;
@@ -1026,12 +1026,12 @@ namespace vulkan {
         }
         ~bufferMemory() { areBound = false; }
         //Getter
-        //????VkBuffer?VkDeviceMemory????????32????????uint64_t??????????????????32?PC??
+        //不定义到VkBuffer和VkDeviceMemory的转换函数，因为32位下这俩类型都是uint64_t的别名，会造成冲突（虽然，谁他妈还用32位PC！）
         VkBuffer Buffer() const { return static_cast<const buffer&>(*this); }
         const VkBuffer* AddressOfBuffer() const { return buffer::Address(); }
         VkDeviceMemory Memory() const { return static_cast<const deviceMemory&>(*this); }
         const VkDeviceMemory* AddressOfMemory() const { return deviceMemory::Address(); }
-        //?areBond?true???????????????????????????
+        //若areBond为true，则成功分配了设备内存、创建了缓冲区，且成功绑定在一起
         bool AreBound() const { return areBound; }
         using deviceMemory::AllocationSize;
         using deviceMemory::MemoryProperties;
@@ -1041,14 +1041,14 @@ namespace vulkan {
         using deviceMemory::BufferData;
         using deviceMemory::RetrieveData;
         //Non-const Function
-        //?????????Create(...)?????????
+        //以下三个函数仅用于Create(...)可能执行失败的情况
         result_t CreateBuffer(VkBufferCreateInfo& createInfo) {
             return buffer::Create(createInfo);
         }
         result_t AllocateMemory(VkMemoryPropertyFlags desiredMemoryProperties) {
             VkMemoryAllocateInfo allocateInfo = MemoryAllocateInfo(desiredMemoryProperties);
             if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount)
-                return VK_RESULT_MAX_ENUM; //????????????VK_ERROR_UNKNOWN
+                return VK_RESULT_MAX_ENUM; //没有合适的错误代码，别用VK_ERROR_UNKNOWN
             return Allocate(allocateInfo);
         }
         result_t BindMemory() {
@@ -1057,18 +1057,18 @@ namespace vulkan {
             areBound = true;
             return VK_SUCCESS;
         }
-        //??????????????
+        //分配设备内存、创建缓冲、绑定
         result_t Create(VkBufferCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
             VkResult result;
-            false || //??????Visual Studio??????
-                (result = CreateBuffer(createInfo)) || //?||????
+            false || //这行用来应对Visual Studio中代码的对齐
+                (result = CreateBuffer(createInfo)) || //用||短路执行
                 (result = AllocateMemory(desiredMemoryProperties)) ||
                 (result = BindMemory());
             return result;
         }
     };
 
-//??BufferView: ???????????1D???????
+//创建BufferView: 定义了将纹理缓冲区作为1D图像使用的方式
     class bufferView {
         VkBufferView handle = (VkBufferView)VK_NULL_HANDLE;
     public:
@@ -1103,7 +1103,7 @@ namespace vulkan {
         }
     };
 
-//??VKImage: GPU?????????(?????????)
+//创建VKImage: GPU可以使用的图像数据(具有格式和内存布局)
     class image {
         VkImage handle = (VkImage)VK_NULL_HANDLE;
     public:
@@ -1138,7 +1138,7 @@ namespace vulkan {
             if (memoryAllocateInfo.memoryTypeIndex == UINT32_MAX &&
                 desiredMemoryProperties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
                 memoryAllocateInfo.memoryTypeIndex = GetMemoryTypeIndex(memoryRequirements.memoryTypeBits, desiredMemoryProperties & ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
-            //??????????????????????memoryAllocateInfo???????????
+            //不在此检查是否成功取得内存类型索引，因为会把memoryAllocateInfo返回出去，交由外部检查
             //if (memoryAllocateInfo.memoryTypeIndex == -1)
             //    outStream << std::format("[ image ] ERROR\nFailed to find any memory type satisfies all desired memory properties!\n");
             return memoryAllocateInfo;
@@ -1161,7 +1161,7 @@ namespace vulkan {
         }
     };
 
-//??imageMemory?  -->??image??????????deviceMemory??,???????
+//封装imageMemory类  -->包含image的创建与释放，内存由deviceMemory申请,然后绑定在一起
     class imageMemory :public image, public deviceMemory {
     public:
         imageMemory() = default;
@@ -1183,14 +1183,14 @@ namespace vulkan {
         using deviceMemory::AllocationSize;
         using deviceMemory::MemoryProperties;
         //Non-const Function
-        //?????????Create(...)?????????
+        //以下三个函数仅用于Create(...)可能执行失败的情况
         result_t CreateImage(VkImageCreateInfo& createInfo) {
             return image::Create(createInfo);
         }
         result_t AllocateMemory(VkMemoryPropertyFlags desiredMemoryProperties) {
             VkMemoryAllocateInfo allocateInfo = MemoryAllocateInfo(desiredMemoryProperties);
             if (allocateInfo.memoryTypeIndex >= graphicsBase::Base().PhysicalDeviceMemoryProperties().memoryTypeCount)
-                return VK_RESULT_MAX_ENUM; //????????????VK_ERROR_UNKNOWN
+                return VK_RESULT_MAX_ENUM; //没有合适的错误代码，别用VK_ERROR_UNKNOWN
             return Allocate(allocateInfo);
         }
         result_t BindMemory() {
@@ -1200,18 +1200,18 @@ namespace vulkan {
             areBound = true;
             return VK_SUCCESS;
         }
-        //??????????????
+        //分配设备内存、创建图像、绑定
         result_t Create(VkImageCreateInfo& createInfo, VkMemoryPropertyFlags desiredMemoryProperties) {
             VkResult result;
-            false || //??????Visual Studio??????
-                (result = CreateImage(createInfo)) || //?||????
+            false || //这行用来应对Visual Studio中代码的对齐
+                (result = CreateImage(createInfo)) || //用||短路执行
                 (result = AllocateMemory(desiredMemoryProperties)) ||
                 (result = BindMemory());
             return result;
         }
     };
 
-//??imageView: ???Image??????(?bufferView??,bufferView????buffer?????)
+//创建imageView: 定义了Image的使用方式。(与bufferView类似,bufferView定义的是buffer的使用方式)
     class imageView {
         VkImageView handle = (VkImageView)VK_NULL_HANDLE;
     public:
