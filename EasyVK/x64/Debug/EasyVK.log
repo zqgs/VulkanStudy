@@ -1,9 +1,0 @@
-﻿   Qt/MSBuild: 3.4.1.0
-  Reading Qt configuration (E:/Qt/Qt5.6.1/5.6/msvc2013_64/bin/qmake)
-EasyVK.vcxproj : error : ERROR running qmake: "E:/Qt/Qt5.6.1/5.6/msvc2013_64/bin/qmake"  -tp vc "CONFIG -= debug release debug_and_release" "CONFIG += debug warn_off"  qtvars.pro
-EasyVK.vcxproj : error : qmake: (E:/Qt/Qt5.6.1/5.6/msvc2013_64/bin/qmake)
-EasyVK.vcxproj : error : qmake: $PWD=D:\Works\Plan\direct11Learn\VulkanLearn\EasyVK\x64\Debug\qt\qmake
-EasyVK.vcxproj : error : qmake: Cannot read D:/Qt/Qt5.6.1/5.6/msvc2013_64/mkspecs/qmake.conf: No such file or directory
-EasyVK.vcxproj : error : qmake: Could not read qmake configuration file D:/Qt/Qt5.6.1/5.6/msvc2013_64/mkspecs/qmake.conf.
-EasyVK.vcxproj : error : qmake: Error processing project file: qtvars.pro
-EasyVK.vcxproj : error : qmake: Error creating .vcxproj file

@@ -97,19 +97,28 @@ const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() {
 }
 //该函数用于创建管线布局
 void CreateLayout() {
+    VkPushConstantRange pushConstantRange = {};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //指定给需要使用着色器  -- 这里给顶点着色器使用
+    pushConstantRange.offset = 0;// 从0开始
+    pushConstantRange.size = 5 * sizeof(glm::vec2);// 5个三角形  每个三角形都是glm::vec2
+
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+
     pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
 }
 //该函数用于创建管线
 void CreatePipeline() {
 
     QString appPath = qApp->applicationDirPath();
+    qDebug()<<"appPath:"<<appPath;
 #if defined(__APPLE__)
     QString glslc = "/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/bin/glslc";
-    QString dir = "/Users/zengqingguo/Desktop/vulkan/Project/EasyVK";
+    QString dir = "/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK";
 #else
     QString glslc = "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe";          // 参数1
-    QString dir = "D:/Works/Plan/direct11Learn/VulkanLearn/EasyVK";
+    QString dir = "D:/Works/Plan/VulkanLearn/VulkanStudy/EasyVK";
 #endif
     struct ShaderStruct
     {
@@ -125,8 +134,10 @@ void CreatePipeline() {
             //QString("%1/FirstTriangle.vert.spv").arg(appPath)
             //QString("%1/shader/VertexBuffer.vert.shader").arg(dir),
             //QString("%1/VertexBuffer.vert.spv").arg(appPath)
-            QString("%1/shader/InstancedRendering.vert.shader").arg(dir),
-            QString("%1/InstancedRendering.vert.spv").arg(appPath)
+            // QString("%1/shader/InstancedRendering.vert.shader").arg(dir),
+            // QString("%1/InstancedRendering.vert.spv").arg(appPath)
+            QString("%1/shader/PushConstant.vert.shader").arg(dir),
+            QString("%1/PushConstant.vert.spv").arg(appPath)
         },
         ShaderStruct
         {   VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -244,16 +255,16 @@ int main/*_mian*/(int argc, char *argv[])
         { { -.5f,  .5f }, { 0, 1, 0, 1 } },
         { {  .5f,  .5f }, { 0, 0, 1, 1 } }
     };
-    std::vector<glm::vec2> offsets = {
+    std::vector<glm::vec2> pushConstants = {
         glm::vec2( 0.0f, 0.0f ),
         glm::vec2(-0.5f, 0.0f ),
-        glm::vec2( 0.5f, 0.0f )
+        glm::vec2( 0.5f, 0.0f ),
+        glm::vec2( 0.0f, -0.5f ),
+        glm::vec2( 0.0f, 0.5f ),
     };
     vertexBuffer vertexBuffer_perVertex(vertices.size() * sizeof(vertex));
     vertexBuffer_perVertex.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
 
-    vertexBuffer vertexBuffer_perInstance(offsets.size() * sizeof(glm::vec2));
-    vertexBuffer_perInstance.TransferData(offsets.data(),vertices.size() * sizeof(glm::vec2));
 
     while (!glfwWindowShouldClose(pWindow)) {
         //窗口最小化时停止渲染循环
@@ -275,13 +286,14 @@ int main/*_mian*/(int argc, char *argv[])
         //开始渲染通道
         rpwf.renderPass.CmdBegin(commandBuffer, rpwf.framebuffers[imageIndex], { {}, windowSize }, clearColor);
 
-        VkBuffer buffers[2] = { vertexBuffer_perVertex, vertexBuffer_perInstance };
-        VkDeviceSize offsets[2] = {};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 2, buffers, offsets);
+        VkDeviceSize offsets = {};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer_perVertex.Address(), &offsets);
+
+        vkCmdPushConstants(commandBuffer, pipelineLayout_triangle, VK_SHADER_STAGE_VERTEX_BIT, 0, pushConstants.size() * sizeof(glm::vec2), pushConstants.data());
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
 
-        vkCmdDraw(commandBuffer, 3, 3, 0, 0);
+        vkCmdDraw(commandBuffer, 3, uint32_t(pushConstants.size()), 0, 0);
 
         //结束渲染通道
         rpwf.renderPass.CmdEnd(commandBuffer);

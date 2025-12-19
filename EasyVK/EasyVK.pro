@@ -11,7 +11,6 @@ SOURCES += \
         EasyVulkan.cpp \
         VKBase+.cpp \
         VKBase.cpp \
-        VulkanSurface.mm \
         main.cpp
 
 # Default rules for deployment.
@@ -21,6 +20,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 
 macx {
+    # 定义平台后缀
+    PLATFORM = macOS
     # macOS Vulkan SDK
     VULKAN_SDK_PATH = /Users/zengqingguo/VulkanSDK/1.4.321.0/macOS
 
@@ -38,9 +39,14 @@ macx {
 
     QMAKE_APPLE_DEVICE_ARCHS = x86_64
     QMAKE_MACOSX_DEPLOYMENT_TARGET = 12.0
+
+    HEADERS += VulkanSurface.h
+    SOURCES += VulkanSurface.mm
 }
 
 win32 {
+    # 定义平台后缀
+    PLATFORM = Win64
     # Windows Vulkan SDK
     VULKAN_SDK_PATH = E:/VulkanSDK/1.3.290.0
 
@@ -50,18 +56,37 @@ win32 {
     # Windows-specific libraries (for example)
     LIBS += -lgdi32 -luser32 -lkernel32 -lShell32
 }
+
+unix:!macx {
+     # 定义平台后缀
+    PLATFORM = Linux
+}
+# 构建类型后缀
+CONFIG(release, debug|release) {
+    BUILDTYPE = release
+} else {
+    BUILDTYPE = debug
+}
+
+BASE_DIR = $$PWD/build/$${PLATFORM}/$${BUILDTYPE}
+
+DLLDESTDIR = $$BASE_DIR
+DESTDIR    = $$BASE_DIR
+OBJECTS_DIR = $$BASE_DIR/objectdir
+MOC_DIR     = $$BASE_DIR/mocdir
+
+
 HEADERS += \
     EasyVKStart.h \
     EasyVulkan.h \
     GlfwGeneral.h \
     VKBase+.h \
     VKBase.h \
-    VKFormat.h \
-    VulkanSurface.h
+    VKFormat.h
 
 DISTFILES += \
     shader/FirstTriangle.frag.shader \
     shader/FirstTriangle.vert.shader \
-    shader/InstancedRendering.vert.shader \
+    shader/PushConstant.vert.shader \
     shader/VertexBuffer.frag.shader \
     shader/VertexBuffer.vert.shader
