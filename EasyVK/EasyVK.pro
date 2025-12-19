@@ -11,7 +11,8 @@ SOURCES += \
         EasyVulkan.cpp \
         VKBase+.cpp \
         VKBase.cpp \
-        main.cpp
+        main.cpp \
+        main_loadtexture.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
