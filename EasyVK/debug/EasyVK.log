@@ -1,0 +1,11 @@
+﻿  main.cpp
+main.cpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\GlfwGeneral.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\VKBase.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\EasyVKStart.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\VKBase.h(626): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\VKBase.h(1180): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\VKBase+.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+d:\works\plan\direct11learn\vulkanlearn\easyvk\VKFormat.h : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+main.cpp(762): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  EasyVK.vcxproj -> D:\Works\Plan\direct11Learn\VulkanLearn\EasyVK\debug\EasyVK.exe
