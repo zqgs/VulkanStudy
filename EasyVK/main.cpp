@@ -85,6 +85,8 @@ bool compileShader(const QString& glslcPath,
 using namespace vulkan;
 pipelineLayout pipelineLayout_triangle; //管线布局
 pipeline pipeline_triangle;             //管线
+descriptorSetLayout descriptorSetLayout_triangle; //描述符布局
+
 
 struct vertex {
     glm::vec2 position;
@@ -95,18 +97,33 @@ const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() {
     static const auto& rpwf = easyVulkan::CreateRpwf_Screen();
     return rpwf;
 }
-//该函数用于创建管线布局
+//该函数用于创建布局
 void CreateLayout() {
+
+    //创建描述符布局
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_trianglePosition = {};
+    descriptorSetLayoutBinding_trianglePosition.binding = 0;                                        //描述符被绑定到0号binding
+    descriptorSetLayoutBinding_trianglePosition.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //类型为uniform缓冲区
+    descriptorSetLayoutBinding_trianglePosition.descriptorCount = 1;                                //个数是1个
+    descriptorSetLayoutBinding_trianglePosition.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;            //在顶点着色器阶段读取uniform缓冲区
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {};
+    descriptorSetLayoutCreateInfo_triangle.bindingCount = 1;
+    descriptorSetLayoutCreateInfo_triangle.pBindings = &descriptorSetLayoutBinding_trianglePosition;
+    descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
+
+
+    //创建管线布局
     VkPushConstantRange pushConstantRange = {};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //指定给需要使用着色器  -- 这里给顶点着色器使用
     pushConstantRange.offset = 0;// 从0开始
     pushConstantRange.size = 5 * sizeof(glm::vec2);// 5个三角形  每个三角形都是glm::vec2
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayout_triangle.Address();
     pipelineLayout_triangle.Create(pipelineLayoutCreateInfo);
+
 }
 //该函数用于创建管线
 void CreatePipeline() {
@@ -130,19 +147,11 @@ void CreatePipeline() {
     QList<ShaderStruct> shader_struct_list{
         ShaderStruct
         {   VK_SHADER_STAGE_VERTEX_BIT,
-            //QString("%1/shader/FirstTriangle.vert.shader").arg(dir),
-            //QString("%1/FirstTriangle.vert.spv").arg(appPath)
-            //QString("%1/shader/VertexBuffer.vert.shader").arg(dir),
-            //QString("%1/VertexBuffer.vert.spv").arg(appPath)
-            // QString("%1/shader/InstancedRendering.vert.shader").arg(dir),
-            // QString("%1/InstancedRendering.vert.spv").arg(appPath)
-            QString("%1/shader/PushConstant.vert.shader").arg(dir),
-            QString("%1/PushConstant.vert.spv").arg(appPath)
+            QString("%1/shader/UniformBuffer.vert.shader").arg(dir),
+            QString("%1/UniformBuffer.vert.spv").arg(appPath)
         },
         ShaderStruct
         {   VK_SHADER_STAGE_FRAGMENT_BIT,
-            //QString("%1/shader/FirstTriangle.frag.shader").arg(dir),
-            //QString("%1/FirstTriangle.frag.spv").arg(appPath)
             QString("%1/shader/VertexBuffer.frag.shader").arg(dir),
             QString("%1/VertexBuffer.frag.spv").arg(appPath)
         }
@@ -258,14 +267,33 @@ int main/*_mian*/(int argc, char *argv[])
     vertexBuffer vertexBuffer_perVertex(vertices.size() * sizeof(vertex));
     vertexBuffer_perVertex.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
 
-    //uniform buffer 遵循std140 标准，uniform block步长为16. vec2 = 8  2*vec2 => vec4
-    std::vector<glm::vec2> pushConstants = {
-        glm::vec2( 0.0f, 0.0f),
-        glm::vec2(-0.5f, 0.0f),
-        glm::vec2( 0.5f, 0.0f),
-        glm::vec2( 0.0f, -0.5f),
-        glm::vec2( 0.0f, 0.5f),
+    //创建描述符池
+    VkDescriptorPoolSize descriptorPoolSizes[] =
+    {
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
     };
+    descriptorPool descriptor_pool(1, descriptorPoolSizes);
+
+    //分配描述符集
+    descriptorSet descriptorSet_trianglePosition;
+    descriptor_pool.AllocateSets(descriptorSet_trianglePosition,descriptorSetLayout_triangle);
+
+    //uniform缓冲区的信息写入描述符. 注意:uniform buffer 遵循std140 标准，uniform block步长为16. vec2 = 8  2*vec2 => vec4
+    std::vector<glm::vec4> uniform_positions = {
+        glm::vec4( 0.0f, 0.0f,0,0),
+        glm::vec4(-0.5f, 0.0f,0,0),
+        glm::vec4( 0.5f, 0.0f,0,0),
+        glm::vec4( 0.0f, -0.5f,0,0),
+        glm::vec4( 0.0f, 0.5f,0,0),
+    };
+    uniformBuffer uniform_buffer(uniform_positions.size() * sizeof(glm::vec4));
+    uniform_buffer.TransferData(uniform_positions.data(),uniform_positions.size() * sizeof(glm::vec4));
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = uniform_buffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;//uniform_positions.size() * sizeof(glm::vec4); //或VK_WHOLE_SIZE
+    descriptorSet_trianglePosition.write(bufferInfo,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
 
     while (!glfwWindowShouldClose(pWindow)) {
         //窗口最小化时停止渲染循环
@@ -290,11 +318,17 @@ int main/*_mian*/(int argc, char *argv[])
         VkDeviceSize offsets = {};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer_perVertex.Address(), &offsets);
 
-        vkCmdPushConstants(commandBuffer, pipelineLayout_triangle, VK_SHADER_STAGE_VERTEX_BIT, 0, pushConstants.size() * sizeof(glm::vec2), pushConstants.data());
+        //绑定描述符并绘制
+        vkCmdBindDescriptorSets(commandBuffer,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout_triangle,
+                                0,
+                                1,
+                                descriptorSet_trianglePosition.Address(),
+                                0,
+                                nullptr);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
-
-        vkCmdDraw(commandBuffer, 3, uint32_t(pushConstants.size()), 0, 0);
+        vkCmdDraw(commandBuffer, 3, uint32_t(uniform_positions.size()), 0, 0);
 
         //结束渲染通道
         rpwf.renderPass.CmdEnd(commandBuffer);

@@ -63,6 +63,7 @@ OBJECTS       = debug/objectdir/EasyVulkan.o \
 DIST          = ../../shader/FirstTriangle.frag.shader \
 		../../shader/FirstTriangle.vert.shader \
 		../../shader/PushConstant.vert.shader \
+		../../shader/UniformBuffer.vert.shader \
 		../../shader/VertexBuffer.frag.shader \
 		../../shader/VertexBuffer.vert.shader \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/mkspecs/features/spec_pre.prf \
