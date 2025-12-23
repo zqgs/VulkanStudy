@@ -83,9 +83,10 @@ bool compileShader(const QString& glslcPath,
 
 
 using namespace vulkan;
+descriptorSetLayout descriptorSetLayout_triangle; //描述符布局
 pipelineLayout pipelineLayout_triangle; //管线布局
 pipeline pipeline_triangle;             //管线
-descriptorSetLayout descriptorSetLayout_triangle; //描述符布局
+
 
 
 struct vertex {
@@ -111,13 +112,6 @@ void CreateLayout() {
     descriptorSetLayoutCreateInfo_triangle.bindingCount = 1;
     descriptorSetLayoutCreateInfo_triangle.pBindings = &descriptorSetLayoutBinding_trianglePosition;
     descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
-
-
-    //创建管线布局
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; //指定给需要使用着色器  -- 这里给顶点着色器使用
-    pushConstantRange.offset = 0;// 从0开始
-    pushConstantRange.size = 5 * sizeof(glm::vec2);// 5个三角形  每个三角形都是glm::vec2
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayoutCreateInfo.setLayoutCount = 1;
@@ -288,6 +282,7 @@ int main/*_mian*/(int argc, char *argv[])
     };
     uniformBuffer uniform_buffer(uniform_positions.size() * sizeof(glm::vec4));
     uniform_buffer.TransferData(uniform_positions.data(),uniform_positions.size() * sizeof(glm::vec4));
+
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = uniform_buffer;
     bufferInfo.offset = 0;
@@ -318,6 +313,8 @@ int main/*_mian*/(int argc, char *argv[])
         VkDeviceSize offsets = {};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer_perVertex.Address(), &offsets);
 
+        //绑定渲染管线  --- 崩溃原因(上一次提交不小心删除了)
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_triangle);
         //绑定描述符并绘制
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
