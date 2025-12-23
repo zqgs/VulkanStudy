@@ -255,16 +255,17 @@ int main/*_mian*/(int argc, char *argv[])
         { { -.5f,  .5f }, { 0, 1, 0, 1 } },
         { {  .5f,  .5f }, { 0, 0, 1, 1 } }
     };
-    std::vector<glm::vec2> pushConstants = {
-        glm::vec2( 0.0f, 0.0f ),
-        glm::vec2(-0.5f, 0.0f ),
-        glm::vec2( 0.5f, 0.0f ),
-        glm::vec2( 0.0f, -0.5f ),
-        glm::vec2( 0.0f, 0.5f ),
-    };
     vertexBuffer vertexBuffer_perVertex(vertices.size() * sizeof(vertex));
     vertexBuffer_perVertex.TransferData(vertices.data(),vertices.size() * sizeof(vertex));
 
+    //uniform buffer 遵循std140 标准，uniform block步长为16. vec2 = 8  2*vec2 => vec4
+    std::vector<glm::vec2> pushConstants = {
+        glm::vec2( 0.0f, 0.0f),
+        glm::vec2(-0.5f, 0.0f),
+        glm::vec2( 0.5f, 0.0f),
+        glm::vec2( 0.0f, -0.5f),
+        glm::vec2( 0.0f, 0.5f),
+    };
 
     while (!glfwWindowShouldClose(pWindow)) {
         //窗口最小化时停止渲染循环

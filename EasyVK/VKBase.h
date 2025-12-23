@@ -1246,5 +1246,175 @@ namespace vulkan {
             return Create(createInfo);
         }
     };
+//以下是整个描述符的使用，创建步骤如下: 创建描述符布局->创建描述符池(按照描述符布局规则)->获得描述符集合(从pool中分配)->操作描述符
+    //封装为descriptorSetLayout类 此类的作用: 一般是用于UBO、SSBO给shader绑定资源用
+    class descriptorSetLayout {
+        VkDescriptorSetLayout handle = (VkDescriptorSetLayout)VK_NULL_HANDLE;
+    public:
+        descriptorSetLayout() = default;
+        descriptorSetLayout(VkDescriptorSetLayoutCreateInfo& createInfo) {
+            Create(createInfo);
+        }
+        descriptorSetLayout(descriptorSetLayout&& other) { MoveHandle; }
+        ~descriptorSetLayout() { DestroyHandleBy(vkDestroyDescriptorSetLayout); }
+        //Getter
+        DefineHandleTypeOperator(VkDescriptorSetLayout,handle);
+        DefineAddressFunction;
+        //Non-const Function
+        result_t Create(VkDescriptorSetLayoutCreateInfo& createInfo) {
+            createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            VkResult result = vkCreateDescriptorSetLayout(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+            if (result){
+                qDebug("[ descriptorSetLayout ] ERROR\nFailed to create a descriptor set layout!\nError code: %d\n", int32_t(result));
+            }
+            return result;
+        }
+    };
+
+    //封装descriptorSet类
+    class descriptorSet {
+        friend class descriptorPool;
+        VkDescriptorSet handle = (VkDescriptorSet)VK_NULL_HANDLE;
+    public:
+        descriptorSet() = default;
+        descriptorSet(descriptorSet&& other) { MoveHandle; }
+
+        //Getter
+        DefineHandleTypeOperator(VkDescriptorSet,handle);
+        DefineAddressFunction;
+        //更新采样器、图像或带采样器资源至描述符
+        void write(arrayRef<const VkDescriptorImageInfo> descriptorInfos,
+                   VkDescriptorType descriptorType,
+                   uint32_t dstBinding = 0,
+                   uint32_t dstArrayElement = 0) const{
+            VkWriteDescriptorSet writeDescriptorSet = {};
+            writeDescriptorSet.dstSet = handle;
+            writeDescriptorSet.dstBinding = dstBinding;
+            writeDescriptorSet.dstArrayElement = dstArrayElement;
+            writeDescriptorSet.descriptorCount = uint32_t(descriptorInfos.Count());
+            writeDescriptorSet.descriptorType = descriptorType;
+            writeDescriptorSet.pImageInfo = descriptorInfos.Pointer();
+            Update(writeDescriptorSet);
+        }
+        //更新uniform或storage缓冲区（或对应的动态缓冲区）资源至描述符
+        void write(arrayRef<const VkDescriptorBufferInfo> descriptorInfos,
+                   VkDescriptorType descriptorType,
+                   uint32_t dstBinding = 0,
+                   uint32_t dstArrayElement = 0) const{
+            VkWriteDescriptorSet writeDescriptorSet = {};
+            writeDescriptorSet.dstSet = handle;
+            writeDescriptorSet.dstBinding = dstBinding;
+            writeDescriptorSet.dstArrayElement = dstArrayElement;
+            writeDescriptorSet.descriptorCount = uint32_t(descriptorInfos.Count());
+            writeDescriptorSet.descriptorType = descriptorType;
+            writeDescriptorSet.pBufferInfo = descriptorInfos.Pointer();
+            Update(writeDescriptorSet);
+        }
+        //更新storage或uniform纹理缓冲区资源至描述符
+        void write(arrayRef<const VkBufferView> descriptorInfos,
+                   VkDescriptorType descriptorType,
+                   uint32_t dstBinding = 0,
+                   uint32_t dstArrayElement = 0) const{
+            VkWriteDescriptorSet writeDescriptorSet = {};
+            writeDescriptorSet.dstSet = handle;
+            writeDescriptorSet.dstBinding = dstBinding;
+            writeDescriptorSet.dstArrayElement = dstArrayElement;
+            writeDescriptorSet.descriptorCount = uint32_t(descriptorInfos.Count());
+            writeDescriptorSet.descriptorType = descriptorType;
+            writeDescriptorSet.pTexelBufferView = descriptorInfos.Pointer();
+            Update(writeDescriptorSet);
+        }
+
+        //Static Function
+        static void Update(arrayRef<VkWriteDescriptorSet> writes,arrayRef<VkCopyDescriptorSet> copies = {}){
+            for(auto& i :writes){
+                i.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            }
+            for(auto& i :copies){
+                i.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+            }
+            vkUpdateDescriptorSets(graphicsBase::Base().Device(),writes.Count(),writes.Pointer(),copies.Count(),copies.Pointer());
+        }
+    };
+
+    class descriptorPool{
+        VkDescriptorPool handle = (VkDescriptorPool)VK_NULL_HANDLE;
+    public:
+        descriptorPool() = default;
+        descriptorPool(VkDescriptorPoolCreateInfo& createInfo){
+            Create(createInfo);
+        }
+        descriptorPool(uint32_t maxSetCount,arrayRef<const VkDescriptorPoolSize> poolSizes,VkDescriptorPoolCreateFlags flags = 0){
+            Create(maxSetCount,poolSizes,flags);
+        }
+        descriptorPool(descriptorPool&& other) { MoveHandle; }
+        ~descriptorPool() { DestroyHandleBy(vkDestroyDescriptorPool); }
+
+        DefineHandleTypeOperator(VkDescriptorPool,handle);
+        DefineAddressFunction;
+
+        result_t AllocateSets(arrayRef<VkDescriptorSet> sets,arrayRef<const VkDescriptorSetLayout> setLayouts) const{
+            if(sets.Count() != setLayouts.Count()){
+                if(sets.Count() < setLayouts.Count()){
+                    qDebug("[ descriptorPool ] ERROR\nFor each descriptor set, must provide a corresponding layout!\n");
+                    return VK_RESULT_MAX_ENUM;
+                }
+                else{
+                    qDebug("[ descriptorPool ] WARNING\nProvided layouts are more than sets!\n");
+                }
+            }
+            VkDescriptorSetAllocateInfo allocateInfo = {};
+            allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocateInfo.descriptorPool = handle; //指示要分配Set的Pool
+            allocateInfo.descriptorSetCount = uint32_t(sets.Count());  //分配多少个集合
+            allocateInfo.pSetLayouts = setLayouts.Pointer();//指定描述符布局
+            VkResult result = vkAllocateDescriptorSets(graphicsBase::Base().Device(),&allocateInfo,sets.Pointer());
+            if(result){
+                qDebug("[ descriptorPool ] ERROR\nFailed to allocate descriptor sets!\nError code: %d\n", int32_t(result));
+            }
+            return result;
+        }
+        //用vkDescSet 和 descriptorSetLayout 分配描述符集合
+        result_t AllocateSets(arrayRef<VkDescriptorSet> sets, arrayRef<const descriptorSetLayout> setLayouts) const {
+            return AllocateSets(sets,
+                                arrayRef<const VkDescriptorSetLayout>(setLayouts[0].Address(), setLayouts.Count()));
+        }
+        //用descriptorSet 和 VkDescriptorSetLayout 分配描述符集合
+        result_t AllocateSets(arrayRef<descriptorSet> sets, arrayRef<const VkDescriptorSetLayout> setLayouts) const {
+            return AllocateSets(arrayRef<VkDescriptorSet>(&sets[0].handle, sets.Count()),
+                                setLayouts);
+        }
+        //用descriptorSet 和 descriptorSetLayout 分配描述符集合
+        result_t AllocateSets(arrayRef<descriptorSet> sets, arrayRef<const descriptorSetLayout> setLayouts) const {
+            return AllocateSets(arrayRef<VkDescriptorSet>(&sets[0].handle, sets.Count()),
+                                arrayRef<const VkDescriptorSetLayout>(setLayouts[0].Address(), setLayouts.Count()));
+        }
+        result_t FreeSets(arrayRef<VkDescriptorSet> sets) const {
+            VkResult result = vkFreeDescriptorSets(graphicsBase::Base().Device(), handle, sets.Count(), sets.Pointer());
+            memset(sets.Pointer(), 0, sets.Count() * sizeof(VkDescriptorSet));
+            return result; //Though vkFreeDescriptorSets(...) can only return VK_SUCCESS
+        }
+        result_t FreeSets(arrayRef<descriptorSet> sets) const {
+            return FreeSets({ &sets[0].handle, sets.Count() });
+        }
+
+        result_t Create(VkDescriptorPoolCreateInfo& createInfo){
+            createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            VkResult result = vkCreateDescriptorPool(graphicsBase::Base().Device(),&createInfo,nullptr,&handle);
+            if(result){
+                qDebug("[ descriptorPool ] ERROR\nFailed to create a descriptor pool!\nError code: %d\n", int32_t(result));
+            }
+            return result;
+        }
+        result_t Create(uint32_t maxSetCount,arrayRef<const VkDescriptorPoolSize> poolSizes,VkDescriptorPoolCreateFlags flags = 0){
+            VkDescriptorPoolCreateInfo createInfo = {};
+            createInfo.flags = flags;
+            createInfo.maxSets = maxSetCount;
+            createInfo.poolSizeCount = uint32_t(poolSizes.Count());
+            createInfo.pPoolSizes = poolSizes.Pointer();
+            return Create(createInfo);
+        }
+    };
 }
 #endif // VKBASE_H
+
