@@ -102,15 +102,27 @@ const easyVulkan::renderPassWithFramebuffers& RenderPassAndFramebuffers() {
 void CreateLayout() {
 
     //创建描述符布局
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_trianglePosition = {};
-    descriptorSetLayoutBinding_trianglePosition.binding = 0;                                        //描述符被绑定到0号binding
-    descriptorSetLayoutBinding_trianglePosition.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //类型为uniform缓冲区
-    descriptorSetLayoutBinding_trianglePosition.descriptorCount = 1;                                //个数是1个
-    descriptorSetLayoutBinding_trianglePosition.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;            //在顶点着色器阶段读取uniform缓冲区
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_uniformPosition = {};
+    descriptorSetLayoutBinding_uniformPosition.binding = 0;                                        //描述符被绑定到0号binding
+    descriptorSetLayoutBinding_uniformPosition.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; //类型为uniform缓冲区
+    descriptorSetLayoutBinding_uniformPosition.descriptorCount = 1;                                //个数是1个
+    descriptorSetLayoutBinding_uniformPosition.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;            //在顶点着色器阶段读取uniform缓冲区
 
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_shaderStoragePosition = {};
+    descriptorSetLayoutBinding_shaderStoragePosition.binding = 1;                                        //描述符被绑定到1号binding
+    descriptorSetLayoutBinding_shaderStoragePosition.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; //类型为shader storage缓冲区
+    descriptorSetLayoutBinding_shaderStoragePosition.descriptorCount = 1;                                //个数是1个
+    descriptorSetLayoutBinding_shaderStoragePosition.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;            //在顶点着色器阶段读取shader storage缓冲区
+
+
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding_array[] =
+    {
+        descriptorSetLayoutBinding_uniformPosition,
+        descriptorSetLayoutBinding_shaderStoragePosition
+    };
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo_triangle = {};
-    descriptorSetLayoutCreateInfo_triangle.bindingCount = 1;
-    descriptorSetLayoutCreateInfo_triangle.pBindings = &descriptorSetLayoutBinding_trianglePosition;
+    descriptorSetLayoutCreateInfo_triangle.bindingCount = sizeof(descriptorSetLayoutBinding_array)/sizeof(VkDescriptorSetLayoutBinding);
+    descriptorSetLayoutCreateInfo_triangle.pBindings = descriptorSetLayoutBinding_array;
     descriptorSetLayout_triangle.Create(descriptorSetLayoutCreateInfo_triangle);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
@@ -141,8 +153,8 @@ void CreatePipeline() {
     QList<ShaderStruct> shader_struct_list{
         ShaderStruct
         {   VK_SHADER_STAGE_VERTEX_BIT,
-            QString("%1/shader/UniformBuffer.vert.shader").arg(dir),
-            QString("%1/UniformBuffer.vert.spv").arg(appPath)
+            QString("%1/shader/UniformAndShaderStorage.vert.shader").arg(dir),
+            QString("%1/UniformAndShaderStorage.vert.spv").arg(appPath)
         },
         ShaderStruct
         {   VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -264,9 +276,10 @@ int main/*_mian*/(int argc, char *argv[])
     //创建描述符池
     VkDescriptorPoolSize descriptorPoolSizes[] =
     {
-        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
+        VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 }
     };
-    descriptorPool descriptor_pool(1, descriptorPoolSizes);
+    descriptorPool descriptor_pool(2, descriptorPoolSizes);
 
     //分配描述符集
     descriptorSet descriptorSet_trianglePosition;
@@ -277,17 +290,29 @@ int main/*_mian*/(int argc, char *argv[])
         glm::vec4( 0.0f, 0.0f,0,0),
         glm::vec4(-0.5f, 0.0f,0,0),
         glm::vec4( 0.5f, 0.0f,0,0),
-        glm::vec4( 0.0f, -0.5f,0,0),
-        glm::vec4( 0.0f, 0.5f,0,0),
     };
     uniformBuffer uniform_buffer(uniform_positions.size() * sizeof(glm::vec4));
     uniform_buffer.TransferData(uniform_positions.data(),uniform_positions.size() * sizeof(glm::vec4));
 
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = uniform_buffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;//uniform_positions.size() * sizeof(glm::vec4); //或VK_WHOLE_SIZE
-    descriptorSet_trianglePosition.write(bufferInfo,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    VkDescriptorBufferInfo ubufferInfo = {};
+    ubufferInfo.buffer = uniform_buffer;
+    ubufferInfo.offset = 0;
+    ubufferInfo.range = VK_WHOLE_SIZE;
+    descriptorSet_trianglePosition.write(ubufferInfo,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,0);
+
+    //shader storage缓冲区的信息写入描述符。注意: SSBO遵循std430标准
+    std::vector<glm::vec4> shader_storage_positions = {
+        glm::vec4( 0.0f, -0.5f,0,0),
+        glm::vec4( 0.0f, 0.5f,0,0),
+    };
+    storageBuffer shader_storage_buffer(shader_storage_positions.size() * sizeof(glm::vec4));
+    shader_storage_buffer.TransferData(shader_storage_positions.data(),shader_storage_positions.size() * sizeof(glm::vec4));
+
+    VkDescriptorBufferInfo sbufferInfo = {};
+    sbufferInfo.buffer = shader_storage_buffer;
+    sbufferInfo.offset = 0;
+    sbufferInfo.range = VK_WHOLE_SIZE;
+    descriptorSet_trianglePosition.write(sbufferInfo,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,1);
 
 
     while (!glfwWindowShouldClose(pWindow)) {
@@ -325,7 +350,7 @@ int main/*_mian*/(int argc, char *argv[])
                                 0,
                                 nullptr);
 
-        vkCmdDraw(commandBuffer, 3, uint32_t(uniform_positions.size()), 0, 0);
+        vkCmdDraw(commandBuffer, 3, 5, 0, 0);
 
         //结束渲染通道
         rpwf.renderPass.CmdEnd(commandBuffer);

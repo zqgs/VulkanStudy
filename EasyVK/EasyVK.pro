@@ -88,6 +88,7 @@ DISTFILES += \
     shader/FirstTriangle.frag.shader \
     shader/FirstTriangle.vert.shader \
     shader/PushConstant.vert.shader \
+    shader/UniformAndShaderStorage.vert.shader \
     shader/UniformBuffer.vert.shader \
     shader/VertexBuffer.frag.shader \
     shader/VertexBuffer.vert.shader
