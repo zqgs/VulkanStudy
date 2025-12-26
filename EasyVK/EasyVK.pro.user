@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.14.84, 2025-12-23T14:47:17. -->
+<!-- Written by QtCreator 4.14.84, 2025-12-26T14:45:30. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -298,6 +298,7 @@
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseTerminal">false</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK/build/macOS/debug</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">1</value>

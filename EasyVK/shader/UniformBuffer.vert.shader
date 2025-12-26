@@ -2,7 +2,7 @@
 #pragma shader_stage(vertex)
 
 layout(set = 0,binding = 0) uniform trianglePosition{
-    vec4 u_Positions[5];
+    vec4 u_Positions[3];
 };
 
 layout(location = 0) in vec2 i_Position;
