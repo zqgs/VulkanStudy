@@ -6,14 +6,16 @@
 static const VkExtent2D& windowSize = vulkan::graphicsBase::Base().SwapchainCreateInfo().imageExtent;
 
 namespace easyVulkan {
-    using namespace vulkan;
+
     struct renderPassWithFramebuffers {
         vulkan::renderPass renderPass;
-        std::vector<framebuffer> framebuffers;
+        std::vector<vulkan::framebuffer> framebuffers;
     };
 
     //创建一个最简单的渲染通道
-    const renderPassWithFramebuffers& CreateRpwf_Screen();
+    extern const renderPassWithFramebuffers& CreateRpwf_Screen();
 
+    //创建一个启动动画
+    extern void BootScreen(const char* imagePath,VkFormat imageFormat);
 }
 #endif // EASYVULKAN_H

@@ -17,8 +17,6 @@
 #define DefineHandleTypeOperator(Type, Member) operator Type() const { return Member; }
 //该宏定义转换函数，用于取得被封装handle的地址：
 #define DefineAddressFunction const decltype(handle)* Address() const { return &handle; }
-//这个宏用来把函数分割成能被多次执行，以及只执行一次的两个部分
-#define ExecuteOnce(...) { static bool executed = false; if (executed) return __VA_ARGS__; executed = true; }
 
 //定义vulkan命名空间，之后会把Vulkan中一些基本对象的封装写在其中
 namespace vulkan {
@@ -56,35 +54,6 @@ namespace vulkan {
 #else //情况3：啥都不干
     using result_t = VkResult;
 #endif
-
-    template<typename T>
-    class arrayRef {
-        T* const pArray = nullptr;
-        size_t count = 0;
-    public:
-        //从空参数构造，count为0
-        arrayRef() = default;
-        //从单个对象构造，count为1
-        arrayRef(T& data) :pArray(&data), count(1) {}
-        //从顶级数组构造
-        template<size_t ElementCount>
-        arrayRef(T(&data)[ElementCount]) : pArray(data), count(ElementCount) {}
-        //从指针和元素个数构造
-        arrayRef(T* pData, size_t elementCount) :pArray(pData), count(elementCount) {}
-        //若T带const修饰，兼容从对应的无const修饰版本的arrayRef构造
-        arrayRef(const arrayRef<std::remove_const<T>>& other) :pArray(other.Pointer()), count(other.Count()) {}
-        //Getter
-        T* Pointer() const { return pArray; }
-        size_t Count() const { return count; }
-        //Const Function
-        T& operator[](size_t index) const { return pArray[index]; }
-        T* begin() const { return pArray; }
-        T* end() const { return pArray + count; }
-        //Non-const Function
-        //禁止复制/移动赋值（arrayRef旨在模拟“对数组的引用”，用处归根结底只是传参，故使其同C++引用的底层地址一样，防止初始化后被修改）
-        arrayRef& operator=(const arrayRef&) = delete;
-    };
-
 
 /*graphicsBase创建逻辑
  * 1.创建vkInstance实例
@@ -1337,6 +1306,7 @@ namespace vulkan {
         }
     };
 
+    //封装描述符池类
     class descriptorPool{
         VkDescriptorPool handle = (VkDescriptorPool)VK_NULL_HANDLE;
     public:

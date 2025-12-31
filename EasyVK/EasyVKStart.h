@@ -22,6 +22,7 @@
 #include <QString>
 #include <QProcess>
 #include <QFileInfo>
+#include <QThread>
 
 //GLM
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -43,6 +44,99 @@
 #pragma comment(lib, "vulkan-1.lib") //链接编译所需的静态存根库
 #include <vulkan/vulkan.h>
 #endif
+
+
+template<typename T>
+class arrayRef {
+    T* const pArray = nullptr;
+    size_t count = 0;
+public:
+    //从空参数构造，count为0
+    arrayRef() = default;
+    //从单个对象构造，count为1
+    arrayRef(T& data) :pArray(&data), count(1) {}
+    //从顶级数组构造
+    template<size_t ElementCount>
+    arrayRef(T(&data)[ElementCount]) : pArray(data), count(ElementCount) {}
+    //从指针和元素个数构造
+    arrayRef(T* pData, size_t elementCount) :pArray(pData), count(elementCount) {}
+    //若T带const修饰，兼容从对应的无const修饰版本的arrayRef构造
+    arrayRef(const arrayRef<std::remove_const<T>>& other) :pArray(other.Pointer()), count(other.Count()) {}
+    //Getter
+    T* Pointer() const { return pArray; }
+    size_t Count() const { return count; }
+    //Const Function
+    T& operator[](size_t index) const { return pArray[index]; }
+    T* begin() const { return pArray; }
+    T* end() const { return pArray + count; }
+    //Non-const Function
+    //禁止复制/移动赋值（arrayRef旨在模拟“对数组的引用”，用处归根结底只是传参，故使其同C++引用的底层地址一样，防止初始化后被修改）
+    arrayRef& operator=(const arrayRef&) = delete;
+};
+
+//这个宏用来把函数分割成能被多次执行，以及只执行一次的两个部分
+#define ExecuteOnce(...) { static bool executed = false; if (executed) return __VA_ARGS__; executed = true; }
+
+//----------Math Related-------------------------------------------------------
+template<
+    typename T,
+    typename std::enable_if<
+        std::is_integral<T>::value &&
+        std::is_signed<T>::value,
+        int
+    >::type = 0
+>
+static int GetSign(T num) {
+    return (num > 0) - (num < 0);
+}
+
+template<
+    typename T,
+    typename std::enable_if<
+        std::is_integral<T>::value &&
+        std::is_signed<T>::value,
+        int
+    >::type = 0
+>
+static bool SameSign(T num0, T num1) {
+    return (num0 == num1 || !((num0 >= 0 && num1 <= 0) || (num0 <= 0 && num1 >= 0)));
+}
+
+template<
+    typename T,
+    typename std::enable_if<
+        std::is_integral<T>::value &&
+        std::is_signed<T>::value,
+        int
+    >::type = 0
+>
+static bool SameSign_Weak(T num0, T num1) {
+    return (num0 ^ num1) >= 0;
+}
+
+template<
+    typename T,
+    typename std::enable_if<
+        std::is_integral<T>::value &&
+        std::is_signed<T>::value,
+        int
+    >::type = 0
+>
+static bool Between_Open(T min, T num, T max) {
+    return ((min - num) & (num - max)) < 0;
+}
+
+template<
+    typename T,
+    typename std::enable_if<
+        std::is_integral<T>::value &&
+        std::is_signed<T>::value,
+        int
+    >::type = 0
+>
+static bool Between_Closed(T min, T num, T max) {
+    return ((num - min) | (max - num)) >= 0;
+}
 
 
 

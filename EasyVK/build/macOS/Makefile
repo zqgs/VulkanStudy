@@ -725,6 +725,8 @@ debug/objectdir/EasyVulkan.o: ../../EasyVulkan.cpp ../../EasyVulkan.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qprocess.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QFileInfo \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -935,6 +937,8 @@ debug/objectdir/VKBase+.o: ../../VKBase+.cpp ../../VKBase+.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qprocess.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QFileInfo \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -1144,6 +1148,8 @@ debug/objectdir/VKBase.o: ../../VKBase.cpp ../../VKBase.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qprocess.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QFileInfo \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -1355,6 +1361,8 @@ debug/objectdir/main.o: ../../main.cpp /Users/zengqingguo/Qt5.9.8/5.9.8/clang_64
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qprocess.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QFileInfo \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
