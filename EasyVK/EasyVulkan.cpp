@@ -203,7 +203,7 @@ namespace easyVulkan {
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = command_buffer.Address();//指定执行的命令缓冲
         submit_info.pWaitDstStageMask = &waitDstStage;
-        graphicsBase::Base().SubmitCommandBuffer_Graphics(submit_info,fence_sync_flag/*命令缓冲执行结束后输出状态*/);
+        graphicsBase::Base().SubmitCommandBuffer_Graphics(submit_info,fence_sync_flag);//命令缓冲执行结束后输出状态
 
         /*提交呈现命令 -- 提交呈现命令前提是命令缓冲区已经执行结束(CPU测需要等待fence,GPU测需要等待渲染结束信号量<在submit输出可以指定>)*/
         //1. 等待命令缓冲执行结束
