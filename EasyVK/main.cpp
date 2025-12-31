@@ -228,7 +228,7 @@ void CreatePipeline() {
 }
 
 
-int main_075(int argc, char *argv[])
+int main/*_075*/(int argc, char *argv[])
 {
     QCoreApplication a(argc,argv);
 
@@ -370,7 +370,7 @@ int main_075(int argc, char *argv[])
 }
 
 
-int main/*_076*/(int argc, char *argv[])
+int main_076(int argc, char *argv[])
 {
     QCoreApplication a(argc,argv);
     //set vulkan env

@@ -277,13 +277,13 @@ void deviceLocalBuffer::TransferData(const void *pData_src, VkDeviceSize size, V
 void deviceLocalBuffer::TransferData(const void *pData_src, uint32_t elementCount, VkDeviceSize elementSize, VkDeviceSize stride_src, VkDeviceSize stride_dst, VkDeviceSize offset) const
 {
     //具有VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT属性
-    if(buffer_memory.MemoryProperties() && VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT){
+    if(buffer_memory.MemoryProperties() & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT){
         void* pData_dst = nullptr;
-        buffer_memory.MapMemory(pData_dst,VkDeviceSize(stride_src * elementSize),offset);
+        buffer_memory.MapMemory(pData_dst,VkDeviceSize(stride_dst * elementCount),offset);
         for(size_t i = 0; i < elementCount;i++){
             memcpy(stride_dst * i + static_cast<uint8_t*>(pData_dst), stride_src * i + static_cast<const uint8_t*>(pData_src), size_t(elementSize));
         }
-        buffer_memory.UnmapMemory(VkDeviceSize(stride_src * elementSize),offset);
+        buffer_memory.UnmapMemory(VkDeviceSize(stride_dst * elementCount),offset);
         return;
     }
     stagingBuffer::BufferData_MainThread(pData_src, elementCount * stride_src);
