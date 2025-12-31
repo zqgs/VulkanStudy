@@ -228,7 +228,7 @@ void CreatePipeline() {
 }
 
 
-int main/*_075*/(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     QCoreApplication a(argc,argv);
 
@@ -237,6 +237,11 @@ int main/*_075*/(int argc, char *argv[])
 
     if (!InitializeWindow({ 640, 480 }))
         return -1;
+
+    //076节增加 -- 拷贝图像到屏幕
+    QString ImagePath = QString("%1/%2").arg(qApp->applicationDirPath()).arg("1.jpg");
+    easyVulkan::BootScreen(ImagePath.toLocal8Bit().data(),VK_FORMAT_R8G8B8A8_UNORM);
+    QThread::msleep(1000);
 
     const auto& rpwf = RenderPassAndFramebuffers();
 
@@ -369,28 +374,6 @@ int main/*_075*/(int argc, char *argv[])
     return 0;
 }
 
-
-int main_076(int argc, char *argv[])
-{
-    QCoreApplication a(argc,argv);
-    //set vulkan env
-    setupVulkanEnv();
-
-    if (!InitializeWindow({ 640, 480 }))
-        return -1;
-
-    using namespace vulkan;
-
-    QString ImagePath = QString("%1/%2").arg(qApp->applicationDirPath()).arg("1.jpg");
-
-    easyVulkan::BootScreen(ImagePath.toLocal8Bit().data(),VK_FORMAT_R8G8B8A8_UNORM);
-
-    //TerminateWindow();
-    //qDebug()<<"Application is run end!";
-    //a.quit();
-    return a.exec();
-    TerminateWindow();
-}
 
 #include <stdexcept>
 #include <vector>

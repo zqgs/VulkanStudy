@@ -109,11 +109,12 @@ namespace easyVulkan {
                 imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
                 imageMemoryBarrier.pNext = nullptr;
                 imageMemoryBarrier.srcAccessMask = 0;//过去没有操作 -- 因为是从TOP_PIPE阶段开始的
-                imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;//将来图像需要给到transfer阶段做blit写入的
-                imageMemoryBarrier.srcQueueFamilyIndex = 0;//没有队列族转移
-                imageMemoryBarrier.dstQueueFamilyIndex = 0;//没有队列族转移
+                imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;//将来图像需要给到transfer阶段做blit写入的
+                imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;//没有队列族转移
+                imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;//没有队列族转移
                 imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;//创建出来就是这个layout
                 imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;//VkImage是作为源输入给到blit，必须为VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                imageMemoryBarrier.image = image;//指定哪一张图像需要内存屏障
                 imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;//RGBA纹理通道
                 imageMemoryBarrier.subresourceRange.baseMipLevel = 0;//默认层级
                 imageMemoryBarrier.subresourceRange.levelCount = 1;
