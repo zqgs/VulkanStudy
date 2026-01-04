@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
     //076节增加 -- 拷贝图像到屏幕
     QString ImagePath = QString("%1/%2").arg(qApp->applicationDirPath()).arg("1.jpg");
     easyVulkan::BootScreen(ImagePath.toLocal8Bit().data(),VK_FORMAT_R8G8B8A8_UNORM);
+    glfwPollEvents(); //注意MacOS如果不增加事件循环会导致窗口无法弹出
     QThread::msleep(1000);
 
     const auto& rpwf = RenderPassAndFramebuffers();
@@ -792,7 +793,7 @@ int main_test_load_texture(/*int argc, char *argv[]*/)
 
         //加载图像
         int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load("E:/project/SPL_Camera/1733392738313.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load("/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK/build/macOS/debug/1.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         if (!pixels){
             throw std::runtime_error("Failed to load texture image!");
         }
