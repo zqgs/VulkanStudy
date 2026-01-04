@@ -1385,6 +1385,30 @@ namespace vulkan {
             return Create(createInfo);
         }
     };
+
+//封装采样器(GPU纹理取样策略 告诉gpu该如何从纹理种读取数据。使用方式和SSBO一样，需要通过描述符使用)
+    class sampler {
+        VkSampler handle = (VkSampler)VK_NULL_HANDLE;
+    public:
+        sampler() = default;
+        sampler(VkSamplerCreateInfo& createInfo) {
+            Create(createInfo);
+        }
+        sampler(sampler&& other) noexcept { MoveHandle; }
+        ~sampler() { DestroyHandleBy(vkDestroySampler); }
+        //Getter
+        DefineHandleTypeOperator(VkSampler,handle);
+        DefineAddressFunction;
+        //Non-const Function
+        result_t Create(VkSamplerCreateInfo& createInfo) {
+            createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            VkResult result = vkCreateSampler(graphicsBase::Base().Device(), &createInfo, nullptr, &handle);
+            if (result){
+                qDebug("[ sampler ] ERROR\nFailed to create a sampler!\nError code: %d\n", int32_t(result));
+            }
+            return result;
+        }
+    };
 }
 #endif // VKBASE_H
 

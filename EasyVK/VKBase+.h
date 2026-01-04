@@ -198,10 +198,63 @@ namespace vulkan {
         static VkDeviceSize CalculateAlignedSize(VkDeviceSize dataSize);
     };
 
-/*封装texture类，用于load file或Memory数据
+/*封装texture类，用于load file或Memory数据(贴图基类)
+ * 一个完整的纹理包含: imageView、imageMemory(VkImage+VkDeviceMemory)、sample
 */
     class texture{
+    protected:
+        imageView image_view;
+        imageMemory image_memory;
+        texture() = default;
+
+        //创建imageView
+        void CreateImageMemory(VkImageType imageType,
+                               VkFormat format,
+                               VkExtent3D extent,
+                               uint32_t mipLevelCount,
+                               uint32_t arrayLayerCount,
+                               VkImageCreateFlags flags = 0){
+
+            VkImageCreateInfo imageCreateInfo = {};
+            imageCreateInfo.flags = flags;
+            imageCreateInfo.imageType = imageType;
+            imageCreateInfo.format = format;
+            imageCreateInfo.extent = extent;
+            imageCreateInfo.mipLevels = mipLevelCount;
+            imageCreateInfo.arrayLayers = arrayLayerCount;
+            imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+            imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+            image_memory.Create(imageCreateInfo,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        }
+
+        void CreateImageView(VkImageViewType viewType,
+                             VkFormat format,
+                             uint32_t mipLevelCount,
+                             uint32_t arrayLayerCount,
+                             VkImageViewCreateFlags flags = 0){
+            VkImageSubresourceRange subResourceRange = {};
+            subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subResourceRange.baseMipLevel = 0;
+            subResourceRange.levelCount = mipLevelCount;
+            subResourceRange.baseArrayLayer = 0;
+            subResourceRange.layerCount = arrayLayerCount;
+
+            image_view.Create(image_memory.Image(),viewType,format,subResourceRange,flags);
+        }
     public:
+        //Getter
+        VkImageView ImageView() const { return image_view; }
+        VkImage Image() const { return image_memory.Image(); }
+        const VkImageView* AddressOfImageView() const { return image_view.Address(); }
+        const VkImage* AddressOfImage() const { return image_memory.AddressOfImage(); }
+
+        //Const Function
+        //该函数返回写入描述符时需要的信息
+        VkDescriptorImageInfo DescriptorImageInfo(VkSampler sampler) const {
+            return { sampler, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+        }
+
         static std::unique_ptr<uint8_t[]> LoadFile(const char* address, VkExtent2D& extent, formatInfo requniredFormatInfo) {
             if(ENABLE_DEBUG_MESSENGER){ //有些格式要求是无法满足的，因此加入在Debug Build下检查requiredFormatInfo
                 //若要求数据为浮点数，stb_image只支持32位浮点数
@@ -279,6 +332,18 @@ namespace vulkan {
                 qDebug("[ texture ] ERROR\nFailed to load image data from the given address!\n");
             }
             return std::unique_ptr<uint8_t[]>(static_cast<uint8_t*>(pImageData));
+        }
+
+        static uint32_t CalculateMipLevelCount(VkExtent2D extent) {
+            /*涉及生成mipmap，待填充*/
+        }
+        static void CopyBlitAndGenerateMipmap2d(VkBuffer buffer_copyFrom, VkImage image_copyTo, VkImage image_blitTo, VkExtent2D imageExtent,
+            uint32_t mipLevelCount = 1, uint32_t layerCount = 1, VkFilter minFilter = VK_FILTER_LINEAR) {
+            /*涉及生成mipmap，待填充*/
+        }
+        static void BlitAndGenerateMipmap2d(VkImage image_preinitialized, VkImage image_final, VkExtent2D imageExtent,
+            uint32_t mipLevelCount = 1, uint32_t layerCount = 1, VkFilter minFilter = VK_FILTER_LINEAR) {
+            /*涉及生成mipmap，待填充*/
         }
     };
 
