@@ -51,11 +51,13 @@ OBJECTS_DIR   = debug/objectdir/
 ####### Files
 
 SOURCES       = ../../EasyVulkan.cpp \
+		../../Examples/Samples2DCompute.cpp \
 		../../VKBase+.cpp \
 		../../VKBase.cpp \
 		../../main.cpp \
 		../../VulkanSurface.mm 
 OBJECTS       = debug/objectdir/EasyVulkan.o \
+		debug/objectdir/Samples2DCompute.o \
 		debug/objectdir/VKBase+.o \
 		debug/objectdir/VKBase.o \
 		debug/objectdir/main.o \
@@ -63,6 +65,7 @@ OBJECTS       = debug/objectdir/EasyVulkan.o \
 DIST          = ../../shader/FirstTriangle.frag.shader \
 		../../shader/FirstTriangle.vert.shader \
 		../../shader/PushConstant.vert.shader \
+		../../shader/Samples2D.comp \
 		../../shader/UniformAndShaderStorage.vert.shader \
 		../../shader/UniformBuffer.vert.shader \
 		../../shader/VertexBuffer.frag.shader \
@@ -253,10 +256,12 @@ DIST          = ../../shader/FirstTriangle.frag.shader \
 		../../../../EasyVK.pro ../../VulkanSurface.h \
 		../../EasyVKStart.h \
 		../../EasyVulkan.h \
+		../../Examples/Samples2DCompute.h \
 		../../GlfwGeneral.h \
 		../../VKBase+.h \
 		../../VKBase.h \
 		../../VKFormat.h ../../EasyVulkan.cpp \
+		../../Examples/Samples2DCompute.cpp \
 		../../VKBase+.cpp \
 		../../VKBase.cpp \
 		../../main.cpp \
@@ -664,8 +669,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents ../../VulkanSurface.h ../../EasyVKStart.h ../../EasyVulkan.h ../../GlfwGeneral.h ../../VKBase+.h ../../VKBase.h ../../VKFormat.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../../EasyVulkan.cpp ../../VKBase+.cpp ../../VKBase.cpp ../../main.cpp ../../VulkanSurface.mm $(DISTDIR)/
+	$(COPY_FILE) --parents ../../VulkanSurface.h ../../EasyVKStart.h ../../EasyVulkan.h ../../Examples/Samples2DCompute.h ../../GlfwGeneral.h ../../VKBase+.h ../../VKBase.h ../../VKFormat.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../../EasyVulkan.cpp ../../Examples/Samples2DCompute.cpp ../../VKBase+.cpp ../../VKBase.cpp ../../main.cpp ../../VulkanSurface.mm $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -727,6 +732,8 @@ debug/objectdir/EasyVulkan.o: ../../EasyVulkan.cpp ../../EasyVulkan.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -926,6 +933,222 @@ debug/objectdir/EasyVulkan.o: ../../EasyVulkan.cpp ../../EasyVulkan.h \
 		../../VKFormat.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug/objectdir/EasyVulkan.o ../../EasyVulkan.cpp
 
+debug/objectdir/Samples2DCompute.o: ../../Examples/Samples2DCompute.cpp ../../Examples/Samples2DCompute.h \
+		../../EasyVulkan.h \
+		../../VKBase+.h \
+		../../VKBase.h \
+		../../EasyVKStart.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QDebug \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qdebug.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QString \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qstring.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QProcess \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qprocess.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QFileInfo \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/platform.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/neon.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/fwd.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/qualifier.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/vec2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_swizzle.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_swizzle_func.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec2.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/compute_vector_relational.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int2_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/scalar_int_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint2_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/scalar_uint_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/vec3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec3.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int3_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint3_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/vec4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec4.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec4_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_bool4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_float4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_double4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_int4_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/vector_uint4_sized.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat2x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x2.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/matrix.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat2x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x3.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat2x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat2x4.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat3x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x2.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat3x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x3.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat3x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat3x4.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double3x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float3x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat4x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x2.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat4x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x3.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x3.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x3_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/mat4x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x4.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_mat4x4_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double4x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x4.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float4x4_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_matrix.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/geometric.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_geometric.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/exponential.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec1.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_vec1.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_exponential.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/vector_relational.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_vector_relational.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_vector_relational_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_vectorize.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_exponential_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/exponential.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/common.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_common.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/compute_common.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_common_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/common.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_geometric_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/geometric.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_matrix_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/matrix.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_double2x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x2.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_float2x2_precision.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/trigonometric.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_trigonometric.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_trigonometric_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/packing.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_packing.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_half.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/type_half.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_packing_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/integer.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_integer.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/func_integer_simd.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/simd/integer.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/gtc/matrix_transform.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_projection.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/gtc/constants.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/scalar_constants.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/scalar_constants.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/gtc/constants.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_projection.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_clip_space.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_clip_space.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/ext/matrix_transform.hpp \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/gtc/matrix_transform.inl \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/stb_image/stb_image.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vk_platform.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_core.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h264std.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codecs_common.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h264std_encode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h265std.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h265std_encode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h264std_decode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_h265std_decode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_av1std.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_av1std_decode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_av1std_encode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_vp9std.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vk_video/vulkan_video_codec_vp9std_decode.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_android.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_fuchsia.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_ios.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_macos.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_metal.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_vi.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_wayland.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_win32.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_xcb.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_xlib.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_directfb.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_xlib_xrandr.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_ggp.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_screen.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_beta.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/vulkan/vulkan_ohos.h \
+		../../VulkanSurface.h \
+		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/GLFW/glfw3.h \
+		../../VKFormat.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug/objectdir/Samples2DCompute.o ../../Examples/Samples2DCompute.cpp
+
 debug/objectdir/VKBase+.o: ../../VKBase+.cpp ../../VKBase+.h \
 		../../VKBase.h \
 		../../EasyVKStart.h \
@@ -939,6 +1162,8 @@ debug/objectdir/VKBase+.o: ../../VKBase+.cpp ../../VKBase+.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -1150,6 +1375,8 @@ debug/objectdir/VKBase.o: ../../VKBase.cpp ../../VKBase.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -1348,9 +1575,7 @@ debug/objectdir/VKBase.o: ../../VKBase.cpp ../../VKBase.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/GLFW/glfw3.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug/objectdir/VKBase.o ../../VKBase.cpp
 
-debug/objectdir/main.o: ../../main.cpp /Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
-		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
-		../../GlfwGeneral.h \
+debug/objectdir/main.o: ../../main.cpp ../../GlfwGeneral.h \
 		../../VKBase.h \
 		../../EasyVKStart.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QDebug \
@@ -1363,6 +1588,8 @@ debug/objectdir/main.o: ../../main.cpp /Users/zengqingguo/Qt5.9.8/5.9.8/clang_64
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qfileinfo.h \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QThread \
 		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qthread.h \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/QCoreApplication \
+		/Users/zengqingguo/Qt5.9.8/5.9.8/clang_64/lib/QtCore.framework/Headers/qcoreapplication.h \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/glm.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/_fixes.hpp \
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/glm/detail/setup.hpp \
@@ -1561,7 +1788,8 @@ debug/objectdir/main.o: ../../main.cpp /Users/zengqingguo/Qt5.9.8/5.9.8/clang_64
 		/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/include/GLFW/glfw3.h \
 		../../EasyVulkan.h \
 		../../VKBase+.h \
-		../../VKFormat.h
+		../../VKFormat.h \
+		../../Examples/Samples2DCompute.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug/objectdir/main.o ../../main.cpp
 
 debug/objectdir/VulkanSurface.o: ../../VulkanSurface.mm ../../VulkanSurface.h \

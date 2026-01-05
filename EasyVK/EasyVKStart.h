@@ -23,6 +23,7 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QThread>
+#include <QCoreApplication>
 
 //GLM
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -34,15 +35,22 @@
 #include <stb_image/stb_image.h>
 
 
+#define APP_PATH (qApp->applicationDirPath())
 #ifdef __APPLE__ //MACOS
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_macos.h>
-#include "VulkanSurface.h"
+    #include <vulkan/vulkan.h>
+    #include <vulkan/vulkan_macos.h>
+    #include "VulkanSurface.h"
+
+    #define VK_GLSLC "/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/bin/glslc"
+    #define CODE_DIR "/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK"
 #elif _WIN32  //Windows
-#define VK_USE_PLATFORM_WIN32_KHR    //在包含vulkan.h前定义该宏，会一并包含vulkan_win32.h和windows.h
-#define NOMINMAX                     //定义该宏可避免windows.h中的min和max两个宏与标准库中的函数名冲突
-#pragma comment(lib, "vulkan-1.lib") //链接编译所需的静态存根库
-#include <vulkan/vulkan.h>
+    #define VK_USE_PLATFORM_WIN32_KHR    //在包含vulkan.h前定义该宏，会一并包含vulkan_win32.h和windows.h
+    #define NOMINMAX                     //定义该宏可避免windows.h中的min和max两个宏与标准库中的函数名冲突
+    #pragma comment(lib, "vulkan-1.lib") //链接编译所需的静态存根库
+    #include <vulkan/vulkan.h>
+
+    #define VK_GLSLC "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe"
+    #define CODE_DIR "D:/Works/Plan/VulkanLearn/VulkanStudy/EasyVK"
 #endif
 
 
@@ -138,6 +146,50 @@ static bool Between_Closed(T min, T num, T max) {
     return ((num - min) | (max - num)) >= 0;
 }
 
+static bool compileShader(const QString& glslcPath,
+                   const QString& shaderPath,
+                   const QString& spvPath)
+{
+    QProcess process;
+
+    // 构造参数：glslc -o out.spv shader.glsl
+    QStringList args;
+    args << "-o" << spvPath << shaderPath;
+
+    process.setProgram(glslcPath);
+    process.setArguments(args);
+
+    // Qt 跨平台处理 PATH, working directory 不需要设置
+    process.start();
+    if (!process.waitForStarted()) {
+        qDebug() << "Failed to start glslc:" << process.errorString();
+        return false;
+    }
+
+    if (!process.waitForFinished()) {
+        qDebug() << "glslc timeout:" << process.errorString();
+        return false;
+    }
+
+    // 输出编译器 log（警告/错误）
+    QString stdOut = process.readAllStandardOutput();
+    QString stdErr = process.readAllStandardError();
+
+    if (!stdOut.isEmpty())
+        qDebug() << "[glslc output]:" << stdOut.trimmed();
+
+    if (!stdErr.isEmpty())
+        qDebug() << "[glslc error ]:" << stdErr.trimmed();
+
+    // glslc 返回 0 表示成功
+    if (process.exitCode() != 0) {
+        qDebug() << "Shader compilation failed. ExitCode =" << process.exitCode();
+        return false;
+    }
+
+    qDebug() << "Compiled successfully:" << shaderPath << "->" << spvPath;
+    return true;
+}
 
 
 #endif // EASYVKSTART_H

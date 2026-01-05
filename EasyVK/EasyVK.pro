@@ -9,6 +9,7 @@ CONFIG -= app_bundle
 
 SOURCES += \
         EasyVulkan.cpp \
+        Examples/Samples2DCompute.cpp \
         VKBase+.cpp \
         VKBase.cpp \
         main.cpp
@@ -79,6 +80,7 @@ MOC_DIR     = $$BASE_DIR/mocdir
 HEADERS += \
     EasyVKStart.h \
     EasyVulkan.h \
+    Examples/Samples2DCompute.h \
     GlfwGeneral.h \
     VKBase+.h \
     VKBase.h \
@@ -88,6 +90,7 @@ DISTFILES += \
     shader/FirstTriangle.frag.shader \
     shader/FirstTriangle.vert.shader \
     shader/PushConstant.vert.shader \
+    shader/Samples2D.comp \
     shader/UniformAndShaderStorage.vert.shader \
     shader/UniformBuffer.vert.shader \
     shader/VertexBuffer.frag.shader \

@@ -1,5 +1,4 @@
-﻿#include <QCoreApplication>
-#include "GlfwGeneral.h"
+﻿#include "GlfwGeneral.h"
 #include "EasyVulkan.h"
 
 #ifdef _WIN32
@@ -36,57 +35,10 @@ void setupVulkanEnv() {
 #endif
 }
 
-bool compileShader(const QString& glslcPath,
-                   const QString& shaderPath,
-                   const QString& spvPath)
-{
-    QProcess process;
-
-    // 构造参数：glslc -o out.spv shader.glsl
-    QStringList args;
-    args << "-o" << spvPath << shaderPath;
-
-    process.setProgram(glslcPath);
-    process.setArguments(args);
-
-    // Qt 跨平台处理 PATH, working directory 不需要设置
-    process.start();
-    if (!process.waitForStarted()) {
-        qDebug() << "Failed to start glslc:" << process.errorString();
-        return false;
-    }
-
-    if (!process.waitForFinished()) {
-        qDebug() << "glslc timeout:" << process.errorString();
-        return false;
-    }
-
-    // 输出编译器 log（警告/错误）
-    QString stdOut = process.readAllStandardOutput();
-    QString stdErr = process.readAllStandardError();
-
-    if (!stdOut.isEmpty())
-        qDebug() << "[glslc output]:" << stdOut.trimmed();
-
-    if (!stdErr.isEmpty())
-        qDebug() << "[glslc error ]:" << stdErr.trimmed();
-
-    // glslc 返回 0 表示成功
-    if (process.exitCode() != 0) {
-        qDebug() << "Shader compilation failed. ExitCode =" << process.exitCode();
-        return false;
-    }
-
-    qDebug() << "Compiled successfully:" << shaderPath << "->" << spvPath;
-    return true;
-}
-
-
 using namespace vulkan;
 descriptorSetLayout descriptorSetLayout_triangle; //描述符布局
 pipelineLayout pipelineLayout_triangle; //管线布局
 pipeline pipeline_triangle;             //管线
-
 
 
 struct vertex {
@@ -125,16 +77,6 @@ void CreateLayout() {
 }
 //该函数用于创建管线
 void CreatePipeline() {
-
-    QString appPath = qApp->applicationDirPath();
-    qDebug()<<"appPath:"<<appPath;
-#if defined(__APPLE__)
-    QString glslc = "/Users/zengqingguo/VulkanSDK/1.4.321.0/macOS/bin/glslc";
-    QString dir = "/Users/zengqingguo/Desktop/gitHub/VulkanStudy/EasyVK";
-#else
-    QString glslc = "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe";          // 参数1
-    QString dir = "D:/Works/Plan/VulkanLearn/VulkanStudy/EasyVK";
-#endif
     struct ShaderStruct
     {
         VkShaderStageFlagBits stage;
@@ -145,20 +87,20 @@ void CreatePipeline() {
     QList<ShaderStruct> shader_struct_list{
         ShaderStruct
         {   VK_SHADER_STAGE_VERTEX_BIT,
-            QString("%1/shader/UniformBuffer.vert.shader").arg(dir),
-            QString("%1/UniformBuffer.vert.spv").arg(appPath)
+            QString("%1/shader/UniformBuffer.vert.shader").arg(CODE_DIR),
+            QString("%1/UniformBuffer.vert.spv").arg(APP_PATH)
         },
         ShaderStruct
         {   VK_SHADER_STAGE_FRAGMENT_BIT,
-            QString("%1/shader/VertexBuffer.frag.shader").arg(dir),
-            QString("%1/VertexBuffer.frag.spv").arg(appPath)
+            QString("%1/shader/VertexBuffer.frag.shader").arg(CODE_DIR),
+            QString("%1/VertexBuffer.frag.spv").arg(APP_PATH)
         }
     };
 
     static std::vector<shaderModule> shaderModules;
     static std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos_triangle;
     for(const ShaderStruct& item : shader_struct_list){
-        compileShader(glslc, item.shader, item.output);
+        compileShader(VK_GLSLC, item.shader, item.output);
 
         // 创建 shader module（注意：不能是 static）
         shaderModules.emplace_back(item.output.toStdString().c_str());
@@ -228,7 +170,7 @@ void CreatePipeline() {
 }
 
 
-int main(int argc, char *argv[])
+int main_076(int argc, char *argv[])
 {
     QCoreApplication a(argc,argv);
 
@@ -239,7 +181,7 @@ int main(int argc, char *argv[])
         return -1;
 
     //076节增加 -- 拷贝图像到屏幕
-    QString ImagePath = QString("%1/%2").arg(qApp->applicationDirPath()).arg("1.jpg");
+    QString ImagePath = QString("%1/%2").arg(APP_PATH).arg("1.jpg");
     easyVulkan::BootScreen(ImagePath.toLocal8Bit().data(),VK_FORMAT_R8G8B8A8_UNORM);
     glfwPollEvents(); //注意MacOS如果不增加事件循环会导致窗口无法弹出
     QThread::msleep(1000);
@@ -376,6 +318,74 @@ int main(int argc, char *argv[])
 }
 
 
+#include "Examples/Samples2DCompute.h"
+int main/*Samples2DCompute*/(int argc, char *argv[])
+{
+    QCoreApplication a(argc,argv);
+
+    //set vulkan env
+    setupVulkanEnv();
+
+    if (!InitializeWindow({ 640, 480 }))
+        return -1;
+
+    QString ImagePath = QString("%1/%2").arg(qApp->applicationDirPath()).arg("1.jpg");
+
+    Samples2DCmp samples2d_cmp;
+    samples2d_cmp.initResource(ImagePath);
+
+    //1. 交换链获取GPU可用图像CMD，需知道CMD执行是否完成需要指定信号
+    semaphore semaphore_available; //需要知道交换链是否给GPU分配了可以使用图像
+
+    /*创建录制命令 -- 创建录制命令，需要有命令池，创建命令池需要缓冲区*/
+    //1.开始创建命令缓冲区(作用:渲染，从Graphics创建命令缓冲池)
+    commandBuffer command_buffer;
+    graphicsBase::Plus().CommandPool_Graphics().AllocateBuffers(command_buffer);
+    while (!glfwWindowShouldClose(pWindow)) {
+        //窗口最小化时停止渲染循环
+        while (glfwGetWindowAttrib(pWindow, GLFW_ICONIFIED)){
+            glfwWaitEvents();
+        }
+        //提交从交换链获取GPU可用图像CMD
+        graphicsBase::Base().SwapImage(semaphore_available);
+        //录制命令(预留)
+        command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        samples2d_cmp.runDispatch(command_buffer);
+        command_buffer.End();
+
+        /*提交录制命令 -- 提交后有两种方式可以获得命令是否已经执行结束(GPU侧:信号,CPU侧:栅栏)*/
+        //1. 使用CPU侧同步，创建栅栏(fence)
+        fence fence_sync_flag;
+
+        //2. 提交录制命令前必须确保GPU已经从GPU拿到可用的图像(需要等待semaphore_available信号<由GPU完成同步>)
+        VkPipelineStageFlags waitDstStage = VK_PIPELINE_STAGE_TRANSFER_BIT; //拷贝和blit属于传输命令
+        VkSubmitInfo submit_info = {};
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = semaphore_available.Address(); //指定执行命令前需要信号
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = command_buffer.Address();//指定执行的命令缓冲
+        submit_info.pWaitDstStageMask = &waitDstStage;
+        graphicsBase::Base().SubmitCommandBuffer_Graphics(submit_info,fence_sync_flag);//命令缓冲执行结束后输出状态
+
+        /*提交呈现命令 -- 提交呈现命令前提是命令缓冲区已经执行结束(CPU测需要等待fence,GPU测需要等待渲染结束信号量<在submit输出可以指定>)*/
+        //1. 等待命令缓冲执行结束
+        fence_sync_flag.WaitAndReset();
+        //2. 呈现图像并向交换链归还使用完毕的图像
+        graphicsBase::Base().PresentImage();
+
+        glfwPollEvents();
+        TitleFps();
+    }
+
+    /*释放命令缓冲*/
+    graphicsBase::Plus().CommandPool_Graphics().FreeBuffers(command_buffer);
+
+    //关闭窗口
+    TerminateWindow();
+
+    a.quit();
+    return 0;
+}
 #include <stdexcept>
 #include <vector>
 #include <cstring>
