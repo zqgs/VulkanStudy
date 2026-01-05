@@ -51,23 +51,14 @@ Samples2DCmp::Samples2DCmp()
         shaderStageCreateInfos_compute.push_back(shaderModules.back().StageCreateInfo(item.stage));
     }
 
-    auto Create = [this] {
-        VkComputePipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        pipelineInfo.layout = pipelineLayout_compute;
-        pipelineInfo.stage  = shaderStageCreateInfos_compute[0];
-        pipelineInfo.basePipelineHandle = (VkPipeline)VK_NULL_HANDLE;
-        pipelineInfo.basePipelineIndex  = -1;
-
-        pipeline_compute.Create(pipelineInfo);
-    };
-    auto Destroy = [this] {
-        pipeline_compute.~pipeline();
-    };
-    graphicsBase::Base().AddCallback_CreateSwapchain(Create);
-    graphicsBase::Base().AddCallback_DestroySwapchain(Destroy);
-    //调用Create()以创建管线
-    Create();
+    //创建管线
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = pipelineLayout_compute;
+    pipelineInfo.stage  = shaderStageCreateInfos_compute[0];
+    pipelineInfo.basePipelineHandle = (VkPipeline)VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex  = -1;
+    pipeline_compute.Create(pipelineInfo);
 
 
     //创建描述符池
