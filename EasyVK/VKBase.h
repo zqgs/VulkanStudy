@@ -1394,7 +1394,7 @@ namespace vulkan {
         sampler(VkSamplerCreateInfo& createInfo) {
             Create(createInfo);
         }
-        sampler(sampler&& other) noexcept { MoveHandle; }
+        sampler(sampler&& other) { MoveHandle; }
         ~sampler() { DestroyHandleBy(vkDestroySampler); }
         //Getter
         DefineHandleTypeOperator(VkSampler,handle);

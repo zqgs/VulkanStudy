@@ -50,7 +50,7 @@
     #include <vulkan/vulkan.h>
 
     #define VK_GLSLC "E:/VulkanSDK/1.3.290.0/Bin/glslc.exe"
-    #define CODE_DIR "D:/Works/Plan/VulkanLearn/VulkanStudy/EasyVK"
+    #define CODE_DIR "D:/GitHub/VulkanStudy/EasyVK"
 #endif
 
 

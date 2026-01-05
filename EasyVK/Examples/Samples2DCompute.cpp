@@ -78,7 +78,6 @@ Samples2DCmp::Samples2DCmp()
     descriptor_pool = std::unique_ptr<descriptorPool>(new descriptorPool(1, descriptorPoolSizes));
 
     //分配描述符集
-    descriptorSet descriptorSet_compute;
     descriptor_pool->AllocateSets(descriptorSet_compute,descriptorSetLayout_compute);
 }
 
